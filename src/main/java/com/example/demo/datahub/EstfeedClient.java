@@ -7,6 +7,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -64,8 +65,8 @@ public class EstfeedClient implements DataHubClient {
         return response.intervals().stream()
                 .map(interval -> new ConsumptionRecord(
                         null,
-                        java.time.Instant.parse(interval.start()),
-                        java.time.Instant.parse(interval.end()),
+                        Instant.parse(interval.start()),
+                        Instant.parse(interval.end()),
                         interval.kwh(),
                         Granularity.HOURLY,
                         DataHubSource.ESTFEED))

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -58,8 +59,8 @@ public class StepClient implements DataHubClient {
         return response.readings().stream()
                 .map(reading -> new ConsumptionRecord(
                         null,
-                        java.time.Instant.parse(reading.start()),
-                        java.time.Instant.parse(reading.end()),
+                        Instant.parse(reading.start()),
+                        Instant.parse(reading.end()),
                         reading.kwh(),
                         Granularity.MONTHLY,
                         DataHubSource.STEP))

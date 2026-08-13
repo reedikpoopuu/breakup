@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -49,7 +50,7 @@ public class NordPoolClient {
             return List.of();
         }
         return response.entries().stream()
-                .map(entry -> new SpotPrice(country, java.time.Instant.parse(entry.deliveryStart()), entry.eurPerMwh()))
+                .map(entry -> new SpotPrice(country, Instant.parse(entry.deliveryStart()), entry.eurPerMwh()))
                 .toList();
     }
 }

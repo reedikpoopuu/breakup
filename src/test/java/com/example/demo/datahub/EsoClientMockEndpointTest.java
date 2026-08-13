@@ -1,5 +1,6 @@
 package com.example.demo.datahub;
 
+import com.example.demo.common.CountryCode;
 import com.example.demo.datahub.support.MockHttpEndpoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
@@ -37,7 +38,7 @@ class EsoClientMockEndpointTest {
             assertThat(records).hasSize(1);
             assertThat(records.get(0).getKwh()).isEqualByComparingTo(new BigDecimal("610.0"));
             assertThat(records.get(0).getSource()).isEqualTo(DataHubSource.ESO);
-            assertThat(client.getCountry()).isEqualTo(com.example.demo.common.CountryCode.LT);
+            assertThat(client.getCountry()).isEqualTo(CountryCode.LT);
         }
     }
 

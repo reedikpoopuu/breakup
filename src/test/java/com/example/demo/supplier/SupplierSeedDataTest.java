@@ -1,6 +1,7 @@
 package com.example.demo.supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,8 +66,8 @@ class SupplierSeedDataTest {
     void seededSupplierMatchesPmSuppliedContactDetails(String country, String name, String rfqEmail,
                                                          String priceUrl) throws Exception {
         String body = mockMvc.perform(get("/api/suppliers").param("country", country))
-                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        JsonNode suppliers = new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode suppliers = new ObjectMapper().readTree(body);
 
         JsonNode match = null;
         for (JsonNode candidate : suppliers) {
@@ -84,8 +86,8 @@ class SupplierSeedDataTest {
     @Test
     void seedsExactlyElevenSuppliersAcrossTheThreeCountries() throws Exception {
         String body = mockMvc.perform(get("/api/suppliers"))
-                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        JsonNode suppliers = new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode suppliers = new ObjectMapper().readTree(body);
 
         long seeded = 0;
         for (JsonNode candidate : suppliers) {

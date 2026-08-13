@@ -1,5 +1,6 @@
 package com.example.demo.datahub;
 
+import com.example.demo.common.CountryCode;
 import com.example.demo.datahub.support.MockHttpEndpoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
@@ -39,7 +40,7 @@ class EstfeedClientMockEndpointTest {
             assertThat(record.getKwh()).isEqualByComparingTo(new BigDecimal("12.5"));
             assertThat(record.getGranularity()).isEqualTo(Granularity.HOURLY);
             assertThat(record.getSource()).isEqualTo(DataHubSource.ESTFEED);
-            assertThat(client.getCountry()).isEqualTo(com.example.demo.common.CountryCode.EE);
+            assertThat(client.getCountry()).isEqualTo(CountryCode.EE);
         }
     }
 

@@ -7,6 +7,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,7 +27,7 @@ class NordPoolClientTest {
                         {"entries":[
                           {"deliveryStart":"2026-01-01T00:00:00Z","eurPerMwh":54.32}
                         ]}
-                        """.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                        """.getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, body.length);
                 try (var os = exchange.getResponseBody()) {
@@ -69,7 +70,7 @@ class NordPoolClientTest {
             AtomicReference<String> seenQuery = new AtomicReference<>();
             endpoint.handle("/api/v1/day-ahead-prices", exchange -> {
                 seenQuery.set(exchange.getRequestURI().getQuery());
-                byte[] body = "{\"entries\":[]}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                byte[] body = "{\"entries\":[]}".getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, body.length);
                 try (var os = exchange.getResponseBody()) {
