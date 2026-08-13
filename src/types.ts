@@ -13,6 +13,8 @@ export interface Company {
   annualKwh: number;
 }
 
+export type ContractSource = 'generated' | 'supplier_email';
+
 export interface Contract {
   supplier: string;
   planType: PlanType;
@@ -20,6 +22,10 @@ export interface Contract {
   expiryDate: string; // ISO date
   penalty: number; // EUR, early-termination penalty
   terms: string[];
+  // ARCH_SPEC.md §3/§7: distinguishes an app-generated draft from one counter-signed off a
+  // supplier-emailed document. Optional here (not on SignedContract fixtures predating the
+  // §7 revision) — see src/schemas/api.ts ContractSchema for the same accommodation.
+  source?: ContractSource;
 }
 
 export interface SignedContract extends Contract {
@@ -77,4 +83,57 @@ export interface WinVsSpotResult {
   spotAnnual: number;
   savings: number;
   months: WinVsSpotMonth[];
+}
+
+// --- Admin subsystem (ARCH_SPEC.md §6): scraped default pricing + AI-assisted review ---
+
+export interface PriceSource {
+  id: string;
+  supplier: string;
+  country: Country;
+  sourceUrl: string;
+  addedByAdminId: string;
+  active: boolean;
+  lastScrapedAt: string | null;
+  complianceNote: string | null;
+}
+
+export type ScrapeRunStatus = 'pending_review' | 'acknowledged' | 'corrected';
+
+export interface ScrapeRun {
+  id: string;
+  priceSourceId: string;
+  scrapedAt: string;
+  rawSnapshotUrl: string;
+  extractedRate: number;
+  previousRate: number | null;
+  aiDiffSummary: string | null;
+  changeDetected: boolean;
+  status: ScrapeRunStatus;
+  acknowledgedByAdminId: string | null;
+  acknowledgedAt: string | null;
+}
+
+export interface BenchmarkProfile {
+  monthlyShares: number[]; // length 12, ARCH_SPEC.md §6.3: "ideally validated to sum to 100"
+  updatedAt: string;
+  updatedBy: string;
+}
+
+// --- Contract intake via inbound email (ARCH_SPEC.md §7) ---
+
+export type InboundContractEmailStatus = 'matched' | 'needs_triage' | 'discarded';
+
+export interface InboundContractEmail {
+  id: string;
+  receivedAt: string;
+  fromAddress: string;
+  subject: string;
+  matchedCompanyId: string | null;
+  matchedRfqId: string | null;
+  matchConfidence: number | null;
+  matchMethod: string | null;
+  rawEmailUrl: string;
+  attachmentPdfUrl: string;
+  status: InboundContractEmailStatus;
 }
