@@ -2,6 +2,8 @@
 // specification the backend responses are validated against in contract tests.
 import { z } from 'zod';
 
+export const CountrySchema = z.enum(['EE', 'LV', 'LT']);
+
 export const ContractSchema = z.object({
   supplier: z.string().min(1),
   planType: z.enum(['fixed', 'spot']),
@@ -9,6 +11,10 @@ export const ContractSchema = z.object({
   expiryDate: z.string(),
   penalty: z.number().nonnegative(),
   terms: z.array(z.string()),
+  // ARCH_SPEC.md §3: "Contract gains one field vs. the prototype's shape: source".
+  // Kept optional (not `.default()`) so pre-§7 fixtures without it still validate as before,
+  // while `generated`/`supplier_email` is still enforced whenever the field is present.
+  source: z.enum(['generated', 'supplier_email']).optional(),
 });
 
 export const SignedContractSchema = ContractSchema.extend({
@@ -150,10 +156,15 @@ export const SignStartResponseSchema = z.object({
   verificationCode: z.string().min(1),
 });
 
-export const SignPollResponseSchema = z.object({
-  status: z.enum(['pending', 'signed', 'failed']),
-  signedContract: SignedContractSchema.optional(),
-});
+export const SignPollResponseSchema = z
+  .object({
+    status: z.enum(['pending', 'signed', 'failed']),
+    signedContract: SignedContractSchema.optional(),
+  })
+  .refine((data) => data.status !== 'signed' || data.signedContract !== undefined, {
+    message: 'signedContract is required when status is "signed"',
+    path: ['signedContract'],
+  });
 
 // --- Win vs spot ---
 
@@ -162,4 +173,78 @@ export const WinVsSpotResponseSchema = z.object({
   spotAnnual: z.number(),
   savings: z.number(),
   months: z.array(WinVsSpotMonthSchema).length(12),
+});
+
+// --- Admin subsystem (ARCH_SPEC.md §6.2/§6.4): scraped default pricing + AI-assisted review ---
+
+export const PriceSourceSchema = z.object({
+  id: z.string().min(1),
+  supplier: z.string().min(1),
+  country: CountrySchema,
+  sourceUrl: z.string().min(1),
+  addedByAdminId: z.string().min(1),
+  active: z.boolean(),
+  lastScrapedAt: z.string().nullable(),
+  complianceNote: z.string().nullable(),
+});
+
+export const PriceSourceCreateRequestSchema = z.object({
+  supplier: z.string().min(1),
+  country: CountrySchema,
+  sourceUrl: z.string().min(1),
+});
+
+export const PriceSourceListResponseSchema = z.array(PriceSourceSchema);
+
+export const ScrapeRunSchema = z.object({
+  id: z.string().min(1),
+  priceSourceId: z.string().min(1),
+  scrapedAt: z.string(),
+  rawSnapshotUrl: z.string().min(1),
+  extractedRate: z.number().nonnegative(),
+  previousRate: z.number().nonnegative().nullable(),
+  aiDiffSummary: z.string().nullable(),
+  changeDetected: z.boolean(),
+  status: z.enum(['pending_review', 'acknowledged', 'corrected']),
+  acknowledgedByAdminId: z.string().nullable(),
+  acknowledgedAt: z.string().nullable(),
+});
+
+export const ScrapeRunListResponseSchema = z.array(ScrapeRunSchema);
+
+export const ScrapeRunAcknowledgeRequestSchema = z.object({
+  correctedRate: z.number().nonnegative().optional(),
+});
+
+export const BenchmarkProfileResponseSchema = z.object({
+  monthlyShares: z.array(z.number()).length(12),
+  updatedAt: z.string(),
+  updatedBy: z.string().min(1),
+});
+
+export const BenchmarkProfileUpdateRequestSchema = z.object({
+  monthlyShares: z.array(z.number()).length(12),
+});
+
+// --- Contract intake via inbound email (ARCH_SPEC.md §7.2/§7.3) ---
+
+export const InboundContractEmailSchema = z.object({
+  id: z.string().min(1),
+  receivedAt: z.string(),
+  fromAddress: z.string().min(1),
+  subject: z.string(),
+  matchedCompanyId: z.string().nullable(),
+  matchedRfqId: z.string().nullable(),
+  matchConfidence: z.number().min(0).max(1).nullable(),
+  matchMethod: z.string().nullable(),
+  rawEmailUrl: z.string().min(1),
+  attachmentPdfUrl: z.string().min(1),
+  status: z.enum(['matched', 'needs_triage', 'discarded']),
+});
+
+export const InboundContractEmailListResponseSchema = z.array(InboundContractEmailSchema);
+
+export const InboundContractEmailMatchRequestSchema = z.object({
+  companyId: z.string().min(1),
+  rfqId: z.string().min(1),
 });

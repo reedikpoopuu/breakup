@@ -1,20 +1,34 @@
 // Contract tests validating example API payloads against the Zod schemas derived from
-// ARCH_SPEC.md §3. Since no backend exists yet (greenfield build, per PM_ANSWERS.txt), these
-// tests exercise the schemas directly against fixture JSON rather than a live/mocked HTTP layer
-// — they are the executable version of the API contract the backend must satisfy, and they
-// double as documentation of which fields are optional/nullable vs required.
+// ARCH_SPEC.md §3 (core SME flow) plus §6 (admin scraping/benchmark subsystem) and §7
+// (inbound-email contract intake). Since no backend exists yet (greenfield build, per
+// PM_ANSWERS.txt), these tests exercise the schemas directly against fixture JSON rather than a
+// live/mocked HTTP layer — they are the executable version of the API contract the backend must
+// satisfy, and they double as documentation of which fields are optional/nullable vs required.
 import { describe, expect, it } from 'vitest';
 import {
+  BenchmarkProfileResponseSchema,
+  BenchmarkProfileUpdateRequestSchema,
   CompaniesListResponseSchema,
   CompanyDetailSchema,
   ConsumptionFetchPollResponseSchema,
   ConsumptionFetchStartResponseSchema,
   ConsumptionResponseSchema,
+  ContractSchema,
   CurrentContractResponseSchema,
+  InboundContractEmailListResponseSchema,
+  InboundContractEmailMatchRequestSchema,
+  InboundContractEmailSchema,
+  PriceSourceCreateRequestSchema,
+  PriceSourceListResponseSchema,
+  PriceSourceSchema,
   RepresentativeRightsResponseSchema,
   RfqCreateResponseSchema,
   RfqGetResponseSchema,
+  RfqMonthlyCheckRequestSchema,
   RfqSendResponseSchema,
+  ScrapeRunAcknowledgeRequestSchema,
+  ScrapeRunListResponseSchema,
+  ScrapeRunSchema,
   SignPollResponseSchema,
   SignStartResponseSchema,
   SmartIdPollResponseSchema,
@@ -270,6 +284,256 @@ describe('RFQ endpoints', () => {
     const badQuote = { ...quote, planType: 'variable' };
     const payload = { rfqId: 'rfq-1', stage: 'published', quotes: [badQuote] };
     expect(RfqCreateResponseSchema.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe('POST /companies/:id/rfq/:rfqId/monthly-check', () => {
+  it('happy path: enabling the monthly check', () => {
+    expect(RfqMonthlyCheckRequestSchema.safeParse({ enabled: true }).success).toBe(true);
+  });
+
+  it('happy path: disabling the monthly check', () => {
+    expect(RfqMonthlyCheckRequestSchema.safeParse({ enabled: false }).success).toBe(true);
+  });
+
+  it('missing API response: enabled field absent is rejected', () => {
+    expect(RfqMonthlyCheckRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('malformed: non-boolean enabled value is rejected', () => {
+    expect(RfqMonthlyCheckRequestSchema.safeParse({ enabled: 'true' }).success).toBe(false);
+  });
+});
+
+describe('Contract.source (§3/§7: generated draft vs. supplier-emailed document)', () => {
+  const baseContract = {
+    supplier: 'Elektrum',
+    planType: 'fixed' as const,
+    rate: 15.6,
+    expiryDate: '2027-01-01',
+    penalty: 410,
+    terms: [],
+  };
+
+  it('happy path: source omitted is still valid (pre-§7 contracts / backward compatibility)', () => {
+    expect(ContractSchema.safeParse(baseContract).success).toBe(true);
+  });
+
+  it('happy path: source "generated" is valid (app-generated draft)', () => {
+    expect(ContractSchema.safeParse({ ...baseContract, source: 'generated' }).success).toBe(
+      true,
+    );
+  });
+
+  it('happy path: source "supplier_email" is valid (received via inbound-email intake, §7)', () => {
+    expect(
+      ContractSchema.safeParse({ ...baseContract, source: 'supplier_email' }).success,
+    ).toBe(true);
+  });
+
+  it('malformed: an unknown source value is rejected', () => {
+    expect(ContractSchema.safeParse({ ...baseContract, source: 'manual_entry' }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe('Admin: POST/GET /admin/price-sources, GET .../scrape-runs, POST .../acknowledge (§6.4)', () => {
+  const priceSource = {
+    id: 'ps-1',
+    supplier: 'Eesti Energia (Enefit)',
+    country: 'EE',
+    sourceUrl: 'https://enefit.ee/pricing',
+    addedByAdminId: 'admin-1',
+    active: true,
+    lastScrapedAt: '2026-08-13T05:00:00.000Z',
+    complianceNote: 'robots.txt checked 2026-08-01, scraping permitted',
+  };
+
+  it('happy path: create price-source request', () => {
+    const payload = { supplier: 'Elektrum', country: 'LV', sourceUrl: 'https://elektrum.lv/hinnad' };
+    expect(PriceSourceCreateRequestSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it('malformed: create price-source with an unsupported country is rejected', () => {
+    const payload = { supplier: 'Elektrum', country: 'FI', sourceUrl: 'https://elektrum.fi' };
+    expect(PriceSourceCreateRequestSchema.safeParse(payload).success).toBe(false);
+  });
+
+  it('happy path: price-source list', () => {
+    expect(PriceSourceListResponseSchema.safeParse([priceSource]).success).toBe(true);
+  });
+
+  it('edge case: empty price-source list (no suppliers configured yet) is valid', () => {
+    expect(PriceSourceListResponseSchema.safeParse([]).success).toBe(true);
+  });
+
+  it('edge case: a never-scraped, newly-added price source has null lastScrapedAt/complianceNote', () => {
+    const fresh = { ...priceSource, lastScrapedAt: null, complianceNote: null, active: false };
+    expect(PriceSourceSchema.safeParse(fresh).success).toBe(true);
+  });
+
+  it('missing API response: complianceNote key entirely absent is rejected (must be explicit null)', () => {
+    const { complianceNote, ...withoutNote } = priceSource;
+    expect(PriceSourceSchema.safeParse(withoutNote).success).toBe(false);
+  });
+
+  const scrapeRun = {
+    id: 'run-1',
+    priceSourceId: 'ps-1',
+    scrapedAt: '2026-08-13T05:00:00.000Z',
+    rawSnapshotUrl: 's3://scrapes/ps-1/2026-08-13.html',
+    extractedRate: 15.9,
+    previousRate: 15.6,
+    aiDiffSummary: 'Rate increased from 15.6 to 15.9 c/kWh; no other changes detected.',
+    changeDetected: true,
+    status: 'pending_review',
+    acknowledgedByAdminId: null,
+    acknowledgedAt: null,
+  };
+
+  it('happy path: scrape-run history with a detected change awaiting review', () => {
+    expect(ScrapeRunListResponseSchema.safeParse([scrapeRun]).success).toBe(true);
+  });
+
+  it('happy path: an acknowledged scrape-run carries admin attribution', () => {
+    const acknowledged = {
+      ...scrapeRun,
+      status: 'acknowledged',
+      acknowledgedByAdminId: 'admin-1',
+      acknowledgedAt: '2026-08-13T08:00:00.000Z',
+    };
+    expect(ScrapeRunSchema.safeParse(acknowledged).success).toBe(true);
+  });
+
+  it('edge case: first-ever scrape for a source has no previousRate and no change detected', () => {
+    const first = { ...scrapeRun, previousRate: null, changeDetected: false, aiDiffSummary: null };
+    expect(ScrapeRunSchema.safeParse(first).success).toBe(true);
+  });
+
+  it('malformed: an unknown scrape-run status is rejected', () => {
+    expect(ScrapeRunSchema.safeParse({ ...scrapeRun, status: 'ignored' }).success).toBe(false);
+  });
+
+  it('happy path: acknowledge with no correction (accept the extracted rate as-is)', () => {
+    expect(ScrapeRunAcknowledgeRequestSchema.safeParse({}).success).toBe(true);
+  });
+
+  it('happy path: acknowledge with a manually corrected rate', () => {
+    expect(
+      ScrapeRunAcknowledgeRequestSchema.safeParse({ correctedRate: 15.75 }).success,
+    ).toBe(true);
+  });
+
+  it('malformed: a negative corrected rate is rejected', () => {
+    expect(
+      ScrapeRunAcknowledgeRequestSchema.safeParse({ correctedRate: -1 }).success,
+    ).toBe(false);
+  });
+});
+
+describe('Admin: GET/PUT /admin/benchmark-profile (§6.3/§6.4)', () => {
+  it('happy path: 12-value benchmark profile response', () => {
+    const payload = {
+      monthlyShares: [10, 9.3, 8.6, 7.8, 7.0, 6.4, 6.1, 6.4, 7.3, 8.3, 9.3, 10.2],
+      updatedAt: '2026-08-01T00:00:00.000Z',
+      updatedBy: 'admin-1',
+    };
+    expect(BenchmarkProfileResponseSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it('malformed: benchmark profile response with fewer than 12 months is rejected', () => {
+    const payload = {
+      monthlyShares: Array(11).fill(100 / 11),
+      updatedAt: '2026-08-01T00:00:00.000Z',
+      updatedBy: 'admin-1',
+    };
+    expect(BenchmarkProfileResponseSchema.safeParse(payload).success).toBe(false);
+  });
+
+  it('happy path: benchmark profile update request', () => {
+    const payload = { monthlyShares: Array(12).fill(100 / 12) };
+    expect(BenchmarkProfileUpdateRequestSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it('missing API response: monthlyShares absent on update request is rejected', () => {
+    expect(BenchmarkProfileUpdateRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('malformed: update request with 13 months is rejected', () => {
+    const payload = { monthlyShares: Array(13).fill(100 / 13) };
+    expect(BenchmarkProfileUpdateRequestSchema.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe('Admin: GET /admin/inbound-contract-emails, POST .../match (§7.2/§7.3)', () => {
+  const matchedEmail = {
+    id: 'ice-1',
+    receivedAt: '2026-08-13T09:00:00.000Z',
+    fromAddress: 'sales@elektrum.lv',
+    subject: 'Contract attached — ref RFQ-4821',
+    matchedCompanyId: 'c1',
+    matchedRfqId: 'rfq-4821',
+    matchConfidence: 0.97,
+    matchMethod: 'subject-token',
+    rawEmailUrl: 's3://inbound-email/ice-1/raw.eml',
+    attachmentPdfUrl: 's3://inbound-email/ice-1/contract.pdf',
+    status: 'matched',
+  };
+
+  it('happy path: an auto-matched inbound contract email', () => {
+    expect(InboundContractEmailListResponseSchema.safeParse([matchedEmail]).success).toBe(true);
+  });
+
+  it('happy path: a low-confidence email routed to manual triage', () => {
+    const needsTriage = {
+      ...matchedEmail,
+      matchedCompanyId: null,
+      matchedRfqId: null,
+      matchConfidence: null,
+      matchMethod: null,
+      status: 'needs_triage',
+    };
+    expect(InboundContractEmailSchema.safeParse(needsTriage).success).toBe(true);
+  });
+
+  it('edge case: a discarded email (spam/no attachment) is a valid terminal state', () => {
+    const discarded = {
+      ...matchedEmail,
+      matchedCompanyId: null,
+      matchedRfqId: null,
+      matchConfidence: null,
+      matchMethod: null,
+      status: 'discarded',
+    };
+    expect(InboundContractEmailSchema.safeParse(discarded).success).toBe(true);
+  });
+
+  it('edge case: empty triage queue (nothing pending) is valid', () => {
+    expect(InboundContractEmailListResponseSchema.safeParse([]).success).toBe(true);
+  });
+
+  it('malformed: an unknown status value is rejected', () => {
+    expect(InboundContractEmailSchema.safeParse({ ...matchedEmail, status: 'archived' }).success).toBe(
+      false,
+    );
+  });
+
+  it('malformed: matchConfidence outside the 0-1 range is rejected', () => {
+    expect(
+      InboundContractEmailSchema.safeParse({ ...matchedEmail, matchConfidence: 1.5 }).success,
+    ).toBe(false);
+  });
+
+  it('happy path: manual triage match request', () => {
+    const payload = { companyId: 'c1', rfqId: 'rfq-4821' };
+    expect(InboundContractEmailMatchRequestSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it('missing API response: rfqId absent on the manual match request is rejected', () => {
+    expect(InboundContractEmailMatchRequestSchema.safeParse({ companyId: 'c1' }).success).toBe(
+      false,
+    );
   });
 });
 
