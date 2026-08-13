@@ -1,4 +1,3 @@
-import { NotImplementedError } from '../calculations/netBenefit.js';
 import type { CompanySession, SignedContract } from '../types.js';
 
 /**
@@ -9,7 +8,7 @@ export function canAccessCompanyScopedRoute(
   isAuthenticated: boolean,
   activeCompanyId: string | null,
 ): boolean {
-  throw new NotImplementedError('canAccessCompanyScopedRoute');
+  return isAuthenticated && activeCompanyId !== null;
 }
 
 /**
@@ -19,7 +18,7 @@ export function canAccessCompanyScopedRoute(
 export function isRfqCtaEnabled(
   session: Pick<CompanySession, 'uploadStatus' | 'consumptionStatus'>,
 ): boolean {
-  throw new NotImplementedError('isRfqCtaEnabled');
+  return session.uploadStatus === 'done' && session.consumptionStatus === 'ready';
 }
 
 /**
@@ -27,7 +26,7 @@ export function isRfqCtaEnabled(
  * signedContract != null && !isSpotPlan(signedContract.planType).
  */
 export function canAccessWinPage(signedContract: SignedContract | null): boolean {
-  throw new NotImplementedError('canAccessWinPage');
+  return signedContract !== null && signedContract.planType !== 'spot';
 }
 
 /**
@@ -37,5 +36,5 @@ export function canAccessWinPage(signedContract: SignedContract | null): boolean
 export function shouldShowCompanySwitcher(
   companies: Pick<CompanySession, 'uploadStatus'>[],
 ): boolean {
-  throw new NotImplementedError('shouldShowCompanySwitcher');
+  return companies.some((c) => c.uploadStatus === 'done');
 }

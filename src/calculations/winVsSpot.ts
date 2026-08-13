@@ -1,4 +1,3 @@
-import { NotImplementedError } from './netBenefit.js';
 import type { ConsumptionMonth, WinVsSpotResult } from '../types.js';
 
 export const SPOT_BASE_RATE = 13;
@@ -15,5 +14,12 @@ export function winVsSpot(
   signedRate: number,
   spotIndex: number[],
 ): WinVsSpotResult {
-  throw new NotImplementedError('winVsSpot');
+  const months = consumption.map((month, i) => {
+    const fixedCost = (month.kwh * signedRate) / 100;
+    const spotCost = (month.kwh * (SPOT_BASE_RATE * (spotIndex[i] ?? 0) + SPOT_MARGIN)) / 100;
+    return { label: month.label, fixedCost, spotCost };
+  });
+  const fixedAnnual = months.reduce((sum, m) => sum + m.fixedCost, 0);
+  const spotAnnual = months.reduce((sum, m) => sum + m.spotCost, 0);
+  return { fixedAnnual, spotAnnual, savings: fixedAnnual - spotAnnual, months };
 }

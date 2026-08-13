@@ -17,12 +17,15 @@ export function netBenefit(
   quoteRate: number,
   penalty: number,
 ): number {
-  throw new NotImplementedError('netBenefit');
+  const currentAnnualCost = (annualKwh * currentRate) / 100;
+  const quoteAnnualCost = (annualKwh * quoteRate) / 100;
+  return Math.round(currentAnnualCost - quoteAnnualCost - penalty);
 }
 
 /**
  * Best offer = max netBenefit across all default + personal quotes combined.
  */
 export function selectBestQuote(quotes: Quote[]): Quote | null {
-  throw new NotImplementedError('selectBestQuote');
+  if (quotes.length === 0) return null;
+  return quotes.reduce((best, quote) => (quote.netBenefit > best.netBenefit ? quote : best));
 }
