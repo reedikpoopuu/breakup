@@ -1,0 +1,18 @@
+# Editor / IDE configuration
+.vscode/
+.idea/
+*.db
+
+# Build & dependencies
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+
+# Local multi-agent script & context files
+team_runner.py
+PM_QUESTIONS.txt
+PM_ANSWERS.txt
+ARCH_SPEC.md
+PR_BODY.md
