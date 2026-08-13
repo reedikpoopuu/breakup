@@ -156,10 +156,15 @@ export const SignStartResponseSchema = z.object({
   verificationCode: z.string().min(1),
 });
 
-export const SignPollResponseSchema = z.object({
-  status: z.enum(['pending', 'signed', 'failed']),
-  signedContract: SignedContractSchema.optional(),
-});
+export const SignPollResponseSchema = z
+  .object({
+    status: z.enum(['pending', 'signed', 'failed']),
+    signedContract: SignedContractSchema.optional(),
+  })
+  .refine((data) => data.status !== 'signed' || data.signedContract !== undefined, {
+    message: 'signedContract is required when status is "signed"',
+    path: ['signedContract'],
+  });
 
 // --- Win vs spot ---
 

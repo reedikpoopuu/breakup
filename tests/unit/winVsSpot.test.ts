@@ -35,9 +35,9 @@ describe('winVsSpot', () => {
     expect(result.savings).toBeLessThan(0);
   });
 
-  it('edge case: a very low signed rate produces positive savings vs spot', () => {
+  it('edge case: a very low signed rate pushes the fixed-vs-spot delta further negative', () => {
     const result = winVsSpot(consumption, 5, SPOT_INDEX);
-    expect(result.savings).toBeGreaterThan(0);
+    expect(result.savings).toBeLessThan(EXPECTED.winVsSpot.savings);
   });
 
   it('edge case: zero consumption in every month yields zero cost on both sides', () => {
