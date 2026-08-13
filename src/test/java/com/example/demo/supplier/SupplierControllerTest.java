@@ -201,5 +201,88 @@ class SupplierControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
         }
+
+        @Test
+        void rejectsBlankSupplierName() throws Exception {
+            SupplierRequest request = new SupplierRequest(CountryCode.EE, "", "a@b.ee", "https://a.ee");
+
+            mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void rejectsMalformedRfqEmail() throws Exception {
+            SupplierRequest request = new SupplierRequest(CountryCode.EE, "BadEmail-" + System.nanoTime(),
+                    "not-an-email", "https://a.ee");
+
+            mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void rejectsBlankPriceUrl() throws Exception {
+            SupplierRequest request = new SupplierRequest(CountryCode.EE, "BadUrl-" + System.nanoTime(),
+                    "a@b.ee", "");
+
+            mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void rejectsMissingCountry() throws Exception {
+            String requestJson = "{\"name\":\"NoCountry\",\"rfqEmail\":\"a@b.ee\",\"priceUrl\":\"https://a.ee\"}";
+
+            mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updatingNonExistentSupplierReturnsNotFound() throws Exception {
+            SupplierRequest update = new SupplierRequest(CountryCode.LV, "Ghost", "a@b.lv", "https://a.lv");
+
+            mockMvc.perform(put("/api/admin/suppliers/{id}", 999_999_999L)
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(update)))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void deletingNonExistentSupplierReturnsNotFound() throws Exception {
+            mockMvc.perform(delete("/api/admin/suppliers/{id}", 999_999_999L)
+                            .header("Authorization", adminAuthHeader()))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void renamingSupplierToAnotherActiveSuppliersCountryAndNameIsRejected() throws Exception {
+            SupplierRequest create = new SupplierRequest(CountryCode.EE, "RenameMe-" + System.nanoTime(),
+                    "a@b.ee", "https://a.ee");
+            String body = mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(create)))
+                    .andReturn().getResponse().getContentAsString();
+            long id = objectMapper.readTree(body).get("id").asLong();
+
+            SupplierRequest collide = new SupplierRequest(CountryCode.EE, "Enefit", "a@b.ee", "https://a.ee");
+            mockMvc.perform(put("/api/admin/suppliers/{id}", id)
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(collide)))
+                    .andExpect(status().isConflict());
+        }
     }
 }

@@ -10,3 +10,4 @@
 /home/reedik/breakup/src/test/java/com/example/demo/datahub/support/MockHttpEndpoint.java
 /home/reedik/breakup/src/test/java/com/example/demo/rfq/QuoteRequestEmailGeneratorTest.java
 /home/reedik/breakup/src/test/java/com/example/demo/supplier/SupplierControllerTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/supplier/SupplierSeedDataTest.java

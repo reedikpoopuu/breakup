@@ -4,6 +4,7 @@ import com.example.demo.common.CountryCode;
 import com.example.demo.datahub.support.MockHttpEndpoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class NordPoolClientTest {
 
@@ -82,6 +84,20 @@ class NordPoolClientTest {
             client.fetchDayAheadPrices(CountryCode.LT, LocalDate.now(), LocalDate.now());
 
             assertThat(seenQuery.get()).contains("deliveryArea=LT");
+        }
+    }
+
+    @Test
+    void propagatesUpstreamServerErrorRatherThanSwallowingIt() {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            endpoint.respondJson("/api/v1/day-ahead-prices", 500, "{\"error\":\"nordpool unavailable\"}");
+
+            NordPoolProperties properties = new NordPoolProperties();
+            properties.setBaseUrl(endpoint.baseUrl());
+            NordPoolClient client = new NordPoolClient(properties, RestClient.builder());
+
+            assertThatThrownBy(() -> client.fetchDayAheadPrices(CountryCode.EE, LocalDate.now(), LocalDate.now()))
+                    .isInstanceOf(RestClientResponseException.class);
         }
     }
 }

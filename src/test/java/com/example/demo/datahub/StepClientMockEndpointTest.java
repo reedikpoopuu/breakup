@@ -3,6 +3,7 @@ package com.example.demo.datahub;
 import com.example.demo.datahub.support.MockHttpEndpoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -58,5 +59,22 @@ class StepClientMockEndpointTest {
 
         assertThatThrownBy(() -> client.fetchConsumption("LV1234", LocalDate.now(), LocalDate.now()))
                 .isInstanceOf(DataHubNotConfiguredException.class);
+    }
+
+    @Test
+    void propagatesUpstreamServerErrorRatherThanSwallowingIt() {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            endpoint.respondJson("/api/v1/consumption", 500, "{\"error\":\"step unavailable\"}");
+
+            StepProperties properties = new StepProperties();
+            properties.setBaseUrl(endpoint.baseUrl());
+            properties.setApiKey("api-key-123");
+
+            StepClient client = new StepClient(properties, RestClient.builder());
+
+            assertThatThrownBy(() -> client.fetchConsumption("LV1234", LocalDate.of(2026, 1, 1),
+                    LocalDate.of(2026, 2, 1)))
+                    .isInstanceOf(RestClientResponseException.class);
+        }
     }
 }

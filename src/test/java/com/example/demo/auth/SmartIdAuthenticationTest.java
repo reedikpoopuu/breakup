@@ -100,6 +100,14 @@ class SmartIdAuthenticationTest {
     }
 
     @Test
+    void pollingUnknownSessionIdReturnsFailedWithoutIssuingToken() throws Exception {
+        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", "does-not-exist"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FAILED"))
+                .andExpect(jsonPath("$.token").doesNotExist());
+    }
+
+    @Test
     void adminIdentityLoginGrantsAccessToAdminEndpoint() throws Exception {
         String sessionId = startSession("EE-38507030022");
         mockMvc.perform(get("/auth/smartid/poll").param("sessionId", sessionId));
