@@ -1,0 +1,12 @@
+/home/reedik/breakup/src/test/java/com/example/demo/auth/AdminBootstrapFailClosedTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/auth/SmartIdAuthenticationTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/auth/support/FakeSmartIdService.java
+/home/reedik/breakup/src/test/java/com/example/demo/auth/support/SmartIdTestConfig.java
+/home/reedik/breakup/src/test/java/com/example/demo/datahub/DataHubClientTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/datahub/EsoClientMockEndpointTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/datahub/EstfeedClientMockEndpointTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/datahub/NordPoolClientTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/datahub/StepClientMockEndpointTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/datahub/support/MockHttpEndpoint.java
+/home/reedik/breakup/src/test/java/com/example/demo/rfq/QuoteRequestEmailGeneratorTest.java
+/home/reedik/breakup/src/test/java/com/example/demo/supplier/SupplierControllerTest.java
