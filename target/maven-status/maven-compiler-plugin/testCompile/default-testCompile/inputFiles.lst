@@ -8,6 +8,7 @@
 /home/reedik/breakup/src/test/java/com/example/demo/datahub/NordPoolClientTest.java
 /home/reedik/breakup/src/test/java/com/example/demo/datahub/StepClientMockEndpointTest.java
 /home/reedik/breakup/src/test/java/com/example/demo/datahub/support/MockHttpEndpoint.java
+/home/reedik/breakup/src/test/java/com/example/demo/pricing/EnergyPackageControllerTest.java
 /home/reedik/breakup/src/test/java/com/example/demo/rfq/QuoteRequestEmailGeneratorTest.java
 /home/reedik/breakup/src/test/java/com/example/demo/supplier/SupplierControllerTest.java
 /home/reedik/breakup/src/test/java/com/example/demo/supplier/SupplierSeedDataTest.java

@@ -34,9 +34,10 @@ class SmartIdAuthenticationTest {
     ObjectMapper objectMapper;
 
     private String startSession(String identity) throws Exception {
-        String body = mockMvc.perform(post("/auth/smartid/start")
+        String[] parts = identity.split("-", 2);
+        String body = mockMvc.perform(post("/api/auth/smart-id/start")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"smartIdIdentity\":\"" + identity + "\"}"))
+                        .content("{\"countryCode\":\"" + parts[0] + "\",\"nationalIdentityNumber\":\"" + parts[1] + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verificationCode").exists())
                 .andReturn().getResponse().getContentAsString();
@@ -45,9 +46,9 @@ class SmartIdAuthenticationTest {
 
     @Test
     void startReturnsSessionIdAndVerificationCode() throws Exception {
-        mockMvc.perform(post("/auth/smartid/start")
+        mockMvc.perform(post("/api/auth/smart-id/start")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"smartIdIdentity\":\"LV-12345\"}"))
+                        .content("{\"countryCode\":\"LV\",\"nationalIdentityNumber\":\"12345\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sessionId").exists())
                 .andExpect(jsonPath("$.verificationCode").value("1234"));
@@ -57,7 +58,7 @@ class SmartIdAuthenticationTest {
     void firstPollReturnsRunning() throws Exception {
         String sessionId = startSession("LV-11111");
 
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", sessionId))
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + sessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.token").doesNotExist());
@@ -67,9 +68,9 @@ class SmartIdAuthenticationTest {
     void secondPollIssuesTokenAndCreatesNewUser() throws Exception {
         String identity = "LT-22222-" + System.nanoTime();
         String sessionId = startSession(identity);
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", sessionId));
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + sessionId));
 
-        String body = mockMvc.perform(get("/auth/smartid/poll").param("sessionId", sessionId))
+        String body = mockMvc.perform(get("/api/auth/smart-id/poll/" + sessionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETE"))
                 .andExpect(jsonPath("$.token").exists())
@@ -86,14 +87,14 @@ class SmartIdAuthenticationTest {
         String identity = "EE-33333-" + System.nanoTime();
 
         String firstSession = startSession(identity);
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", firstSession));
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", firstSession))
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + firstSession));
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + firstSession))
                 .andExpect(status().isOk());
         long firstCount = appUserRepository.count();
 
         String secondSession = startSession(identity);
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", secondSession));
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", secondSession))
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + secondSession));
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + secondSession))
                 .andExpect(status().isOk());
 
         assertThat(appUserRepository.count()).isEqualTo(firstCount);
@@ -101,7 +102,7 @@ class SmartIdAuthenticationTest {
 
     @Test
     void pollingUnknownSessionIdReturnsFailedWithoutIssuingToken() throws Exception {
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", "does-not-exist"))
+        mockMvc.perform(get("/api/auth/smart-id/poll/does-not-exist"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("FAILED"))
                 .andExpect(jsonPath("$.token").doesNotExist());
@@ -110,8 +111,8 @@ class SmartIdAuthenticationTest {
     @Test
     void adminIdentityLoginGrantsAccessToAdminEndpoint() throws Exception {
         String sessionId = startSession("EE-38507030022");
-        mockMvc.perform(get("/auth/smartid/poll").param("sessionId", sessionId));
-        String body = mockMvc.perform(get("/auth/smartid/poll").param("sessionId", sessionId))
+        mockMvc.perform(get("/api/auth/smart-id/poll/" + sessionId));
+        String body = mockMvc.perform(get("/api/auth/smart-id/poll/" + sessionId))
                 .andExpect(jsonPath("$.role").value("ADMIN"))
                 .andReturn().getResponse().getContentAsString();
         String token = objectMapper.readTree(body).get("token").asText();
