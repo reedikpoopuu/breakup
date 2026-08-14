@@ -56,6 +56,30 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>ee.sk.smartid</groupId>
+            <artifactId>smart-id-java-client</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <!-- smart-id-java-client depends on the JAX-RS API + jersey-media-json-jackson
+             but not on a jersey-client provider implementation; without it,
+             jakarta.ws.rs.client.ClientBuilder has nothing to resolve at runtime. -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>3.1.9</version>
+        </dependency>
+        <!-- Jersey's default HttpUrlConnector (java.net.HttpURLConnection) hangs past its
+             configured read timeout on Smart-ID's long-poll /session/{id} response instead
+             of returning within the requested socket-open time - verified against
+             sid.demo.sk.ee. The Apache connector handles the same long-poll response
+             correctly, matching SK's own integration guidance. -->
+        <dependency>
+            <groupId>org.glassfish.jersey.connectors</groupId>
+            <artifactId>jersey-apache-connector</artifactId>
+            <version>3.1.9</version>
+        </dependency>
     </dependencies>
 
     <build>

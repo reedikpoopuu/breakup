@@ -1,11 +1,12 @@
 package com.example.demo.auth;
 
+import com.example.demo.controller.SmartIdAuthController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = SmartIdController.class)
+@RestControllerAdvice(assignableTypes = SmartIdAuthController.class)
 public class SmartIdExceptionHandler {
 
     @ExceptionHandler(SmartIdNotConfiguredException.class)
