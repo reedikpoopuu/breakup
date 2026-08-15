@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/admin.html", "/static/**", "/*.js", "/*.css", "/favicon.ico", "/error").permitAll()
+                        .requestMatchers("/", "/index.html", "/admin.html", "/static/**", "/assets/**", "/*.js", "/*.css", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/api/auth/smart-id/**").permitAll()
                         .requestMatchers("/api/suppliers", "/api/suppliers/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
