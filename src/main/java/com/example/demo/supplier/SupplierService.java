@@ -1,6 +1,9 @@
 package com.example.demo.supplier;
 
 import com.example.demo.common.CountryCode;
+import com.example.demo.pricing.EnergyPackageRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,10 +12,14 @@ import java.util.List;
 @Service
 public class SupplierService {
 
-    private final SupplierRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(SupplierService.class);
 
-    public SupplierService(SupplierRepository repository) {
+    private final SupplierRepository repository;
+    private final EnergyPackageRepository energyPackageRepository;
+
+    public SupplierService(SupplierRepository repository, EnergyPackageRepository energyPackageRepository) {
         this.repository = repository;
+        this.energyPackageRepository = energyPackageRepository;
     }
 
     @Transactional(readOnly = true)
@@ -51,5 +58,9 @@ public class SupplierService {
     public void softDelete(Long id) {
         Supplier supplier = repository.findById(id).orElseThrow(() -> new SupplierNotFoundException(id));
         supplier.setActive(false);
+        long removed = energyPackageRepository.deleteBySupplierNameAndCountry(supplier.getName(), supplier.getCountry());
+        if (removed > 0) {
+            log.info("Deleted {} energy package(s) for removed supplier {}/{}", removed, supplier.getCountry(), supplier.getName());
+        }
     }
 }

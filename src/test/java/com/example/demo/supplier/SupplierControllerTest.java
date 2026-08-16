@@ -192,6 +192,36 @@ class SupplierControllerTest {
         }
 
         @Test
+        void deletingASupplierAlsoRemovesItsPackagesFromTheAdminPackagesListing() throws Exception {
+            String supplierName = "CascadeMe-" + System.nanoTime();
+            SupplierRequest create = new SupplierRequest(CountryCode.LT, supplierName, "a@b.lt", "https://a.lt");
+            String supplierBody = mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(create)))
+                    .andReturn().getResponse().getContentAsString();
+            long supplierId = objectMapper.readTree(supplierBody).get("id").asLong();
+
+            String packageBody = mockMvc.perform(post("/api/admin/packages")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"packageName":"Cascade Package","supplierName":"%s","country":"LT","pricePerKwh":0.15,"marginPerKwh":0.02}
+                                    """.formatted(supplierName)))
+                    .andReturn().getResponse().getContentAsString();
+            long packageId = objectMapper.readTree(packageBody).get("id").asLong();
+
+            mockMvc.perform(get("/api/admin/packages").header("Authorization", adminAuthHeader()))
+                    .andExpect(jsonPath("$[?(@.id == " + packageId + ")]").exists());
+
+            mockMvc.perform(delete("/api/admin/suppliers/{id}", supplierId).header("Authorization", adminAuthHeader()))
+                    .andExpect(status().isNoContent());
+
+            mockMvc.perform(get("/api/admin/packages").header("Authorization", adminAuthHeader()))
+                    .andExpect(jsonPath("$[?(@.id == " + packageId + ")]").doesNotExist());
+        }
+
+        @Test
         void nonAdminCannotCreateSuppliers() throws Exception {
             SupplierRequest request = new SupplierRequest(CountryCode.EE, "Blocked", "a@b.ee", "https://a.ee");
 
