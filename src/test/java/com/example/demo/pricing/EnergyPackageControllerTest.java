@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -143,6 +144,41 @@ class EnergyPackageControllerTest {
         assertThat(created.get("source").asText()).isEqualTo("MANUAL");
         assertThat(created.get("visible").asBoolean()).isTrue();
         assertThat(created.get("supplierName").asText()).isEqualTo("Enefit");
+    }
+
+    @Test
+    void adminCanEditAManualPackage() throws Exception {
+        String body = mockMvc.perform(post("/api/admin/packages")
+                        .header("Authorization", adminAuthHeader())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(manualPackageJson("Edit Me Deal")))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        long id = objectMapper.readTree(body).get("id").asLong();
+
+        mockMvc.perform(put("/api/admin/packages/" + id)
+                        .header("Authorization", adminAuthHeader())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"packageName":"Edited Deal","supplierName":"Enefit","country":"EE","pricePerKwh":0.1600,"marginPerKwh":0.0250}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.packageName").value("Edited Deal"))
+                .andExpect(jsonPath("$.pricePerKwh").value(0.16));
+    }
+
+    @Test
+    void adminCannotEditAScrapedPackage() throws Exception {
+        mockMvc.perform(post("/api/admin/packages/scrape").header("Authorization", adminAuthHeader()))
+                .andExpect(status().isOk());
+        String listBody = mockMvc.perform(get("/api/admin/packages").header("Authorization", adminAuthHeader()))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        long scrapedId = byPackageName(objectMapper.readTree(listBody), "KINDEL PAKETT").get("id").asLong();
+
+        mockMvc.perform(put("/api/admin/packages/" + scrapedId)
+                        .header("Authorization", adminAuthHeader())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(manualPackageJson("Hacked Name")))
+                .andExpect(status().isConflict());
     }
 
     @Test

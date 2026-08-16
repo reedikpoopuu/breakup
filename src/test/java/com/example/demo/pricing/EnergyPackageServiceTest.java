@@ -155,6 +155,46 @@ class EnergyPackageServiceTest {
     }
 
     @Test
+    void updateAppliesNewFieldsToAManualPackage() {
+        EnergyPackage energyPackage = new EnergyPackage("Old Name", "Enefit", CountryCode.EE,
+                new BigDecimal("0.10"), BigDecimal.ZERO, PackageSource.MANUAL);
+        when(packages.findById(1L)).thenReturn(Optional.of(energyPackage));
+        EnergyPackageService service = new EnergyPackageService(packages, suppliers, List.of(), fetcher);
+
+        EnergyPackageRequest request = new EnergyPackageRequest("New Name", "Enefit", CountryCode.EE,
+                new BigDecimal("0.20"), new BigDecimal("0.03"));
+        EnergyPackage updated = service.update(1L, request);
+
+        assertThat(updated.getPackageName()).isEqualTo("New Name");
+        assertThat(updated.getPricePerKwh()).isEqualByComparingTo("0.20");
+        assertThat(updated.getMarginPerKwh()).isEqualByComparingTo("0.03");
+    }
+
+    @Test
+    void updateRefusesToTouchAScrapedPackage() {
+        EnergyPackage energyPackage = new EnergyPackage("KINDEL PAKETT", "Elenger", CountryCode.EE,
+                new BigDecimal("0.1267"), BigDecimal.ZERO, PackageSource.SCRAPED);
+        when(packages.findById(1L)).thenReturn(Optional.of(energyPackage));
+        EnergyPackageService service = new EnergyPackageService(packages, suppliers, List.of(), fetcher);
+
+        EnergyPackageRequest request = new EnergyPackageRequest("Hacked", "Elenger", CountryCode.EE,
+                new BigDecimal("0.01"), BigDecimal.ZERO);
+
+        assertThatThrownBy(() -> service.update(1L, request)).isInstanceOf(EnergyPackageNotEditableException.class);
+        assertThat(energyPackage.getPackageName()).isEqualTo("KINDEL PAKETT");
+    }
+
+    @Test
+    void updateThrowsWhenThePackageDoesNotExist() {
+        when(packages.findById(99L)).thenReturn(Optional.empty());
+        EnergyPackageService service = new EnergyPackageService(packages, suppliers, List.of(), fetcher);
+
+        EnergyPackageRequest request = new EnergyPackageRequest("X", "Y", CountryCode.EE, BigDecimal.ONE, BigDecimal.ZERO);
+
+        assertThatThrownBy(() -> service.update(99L, request)).isInstanceOf(EnergyPackageNotFoundException.class);
+    }
+
+    @Test
     void setVisibleTogglesTheFlag() {
         EnergyPackage energyPackage = new EnergyPackage("P", "S", CountryCode.EE, BigDecimal.ONE, BigDecimal.ZERO, PackageSource.MANUAL);
         when(packages.findById(1L)).thenReturn(Optional.of(energyPackage));
