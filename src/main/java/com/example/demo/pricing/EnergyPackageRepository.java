@@ -17,4 +17,6 @@ public interface EnergyPackageRepository extends JpaRepository<EnergyPackage, Lo
     Optional<EnergyPackage> findBySupplierNameAndPackageName(String supplierName, String packageName);
 
     boolean existsBySupplierNameAndPackageName(String supplierName, String packageName);
+
+    long deleteBySupplierNameAndCountry(String supplierName, CountryCode country);
 }

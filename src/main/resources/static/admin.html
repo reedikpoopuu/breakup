@@ -74,6 +74,23 @@
           </div>
           <span id="supplier-readonly-note" class="eb-hidden eb-badge eb-badge-accent">Read-only — set an admin API token to edit</span>
         </div>
+
+        <div class="eb-card eb-mt-16" style="padding:16px">
+          <div class="eb-text-sm" style="font-weight:700;margin-bottom:10px">Add a supplier</div>
+          <div class="eb-row eb-row-gap-8" style="flex-wrap:wrap">
+            <input id="new-supplier-name" type="text" placeholder="Supplier name" class="eb-input" style="width:180px">
+            <select id="new-supplier-country" class="eb-select" style="width:80px">
+              <option value="EE" selected>EE</option>
+              <option value="LV">LV</option>
+              <option value="LT">LT</option>
+            </select>
+            <input id="new-supplier-price-url" type="url" placeholder="Public price source URL" class="eb-input" style="width:280px">
+            <input id="new-supplier-rfq-email" type="email" placeholder="RFQ contact email" class="eb-input" style="width:200px">
+            <button id="add-supplier-btn" class="eb-btn eb-btn-primary eb-btn-sm">Add supplier</button>
+          </div>
+          <p id="add-supplier-error" class="eb-hidden eb-text-sm" style="color:var(--danger-text);margin-top:8px"></p>
+        </div>
+
         <div class="eb-table-wrap eb-mt-16">
           <table class="eb-table">
             <thead><tr>
@@ -371,31 +388,91 @@
             ? '<span class="eb-badge eb-badge-success">Active</span>'
             : '<span class="eb-badge">Inactive</span>') + '</td>' +
           '<td style="text-align:right">' +
-          '<button data-action="save-supplier" ' + disabled + ' class="eb-btn eb-btn-primary eb-btn-sm">Save Changes</button>' +
+          '<button data-action="save-supplier" ' + disabled + ' class="eb-btn eb-btn-primary eb-btn-sm">Save Changes</button> ' +
+          '<button data-action="delete-supplier" ' + disabled + ' class="eb-btn eb-btn-secondary eb-btn-sm">Delete</button>' +
           '</td></tr>'
         );
       }).join('');
   }
 
   document.getElementById('supplier-rows').addEventListener('click', async (e) => {
-    const btn = e.target.closest('button[data-action="save-supplier"]');
-    if (!btn) return;
-    const row = btn.closest('tr');
-    const id = row.dataset.id;
-    const country = row.dataset.country;
-    const name = row.dataset.name;
-    const priceUrl = row.querySelector('input[data-field="priceUrl"]').value.trim();
-    const rfqEmail = row.querySelector('input[data-field="rfqEmail"]').value.trim();
+    const saveBtn = e.target.closest('button[data-action="save-supplier"]');
+    if (saveBtn) {
+      const row = saveBtn.closest('tr');
+      const id = row.dataset.id;
+      const country = row.dataset.country;
+      const name = row.dataset.name;
+      const priceUrl = row.querySelector('input[data-field="priceUrl"]').value.trim();
+      const rfqEmail = row.querySelector('input[data-field="rfqEmail"]').value.trim();
 
-    const original = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Saving…';
+      const original = saveBtn.textContent;
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      try {
+        await apiFetch('/api/admin/suppliers/' + id, { method: 'PUT', body: JSON.stringify({ country, name, rfqEmail, priceUrl }) });
+        toast(name + ' updated');
+      } catch (err) {
+        toast('Failed to save ' + name + ': ' + err.message);
+      } finally {
+        saveBtn.disabled = suppliersReadOnly; saveBtn.textContent = original;
+      }
+      return;
+    }
+
+    const deleteBtn = e.target.closest('button[data-action="delete-supplier"]');
+    if (deleteBtn) {
+      const row = deleteBtn.closest('tr');
+      const id = row.dataset.id;
+      const country = row.dataset.country;
+      const name = row.dataset.name;
+      const affectedPackages = latestPackages.filter(p => p.supplierName === name && p.country === country);
+
+      const warning = affectedPackages.length
+        ? 'Delete ' + name + ' (' + country + ')? This will also permanently delete ' + affectedPackages.length +
+          ' package(s) currently listed under it in Default Energy Packages: ' +
+          affectedPackages.map(p => p.packageName).join(', ') + '.'
+        : 'Delete ' + name + ' (' + country + ')?';
+      if (!confirm(warning)) return;
+
+      const original = deleteBtn.textContent;
+      deleteBtn.disabled = true; deleteBtn.textContent = 'Deleting…';
+      try {
+        await apiFetch('/api/admin/suppliers/' + id, { method: 'DELETE' });
+        toast(affectedPackages.length
+          ? name + ' deleted along with ' + affectedPackages.length + ' package(s)'
+          : name + ' deleted');
+        await loadSuppliers();
+        await loadPackages();
+      } catch (err) {
+        toast('Failed to delete ' + name + ': ' + err.message);
+        deleteBtn.disabled = suppliersReadOnly; deleteBtn.textContent = original;
+      }
+    }
+  });
+
+  document.getElementById('add-supplier-btn').addEventListener('click', async () => {
+    const errorEl = document.getElementById('add-supplier-error');
+    errorEl.classList.add('eb-hidden');
+    const name = document.getElementById('new-supplier-name').value.trim();
+    const country = document.getElementById('new-supplier-country').value;
+    const priceUrl = document.getElementById('new-supplier-price-url').value.trim();
+    const rfqEmail = document.getElementById('new-supplier-rfq-email').value.trim();
+    if (!name || !priceUrl || !rfqEmail) {
+      errorEl.textContent = 'Fill in all fields.'; errorEl.classList.remove('eb-hidden');
+      return;
+    }
+    const btn = document.getElementById('add-supplier-btn');
+    btn.disabled = true; btn.textContent = 'Adding…';
     try {
-      await apiFetch('/api/admin/suppliers/' + id, { method: 'PUT', body: JSON.stringify({ country, name, rfqEmail, priceUrl }) });
-      toast(name + ' updated');
+      await apiFetch('/api/admin/suppliers', { method: 'POST', body: JSON.stringify({ country, name, rfqEmail, priceUrl }) });
+      document.getElementById('new-supplier-name').value = '';
+      document.getElementById('new-supplier-price-url').value = '';
+      document.getElementById('new-supplier-rfq-email').value = '';
+      await loadSuppliers();
+      toast('Supplier added');
     } catch (err) {
-      toast('Failed to save ' + name + ': ' + err.message);
+      errorEl.textContent = 'Failed to add supplier: ' + err.message; errorEl.classList.remove('eb-hidden');
     } finally {
-      btn.disabled = suppliersReadOnly; btn.textContent = original;
+      btn.disabled = false; btn.textContent = 'Add supplier';
     }
   });
 
@@ -403,7 +480,12 @@
   function formatEur(value) { return '€' + Number(value).toFixed(4); }
   function formatTimestamp(iso) { try { return new Date(iso).toLocaleString(); } catch (e) { return iso; } }
 
+  // Kept in sync with the last successful load so the supplier-delete confirm dialog
+  // (above) can warn about affected packages without an extra round trip.
+  let latestPackages = [];
+
   function renderPackages(packages) {
+    latestPackages = packages;
     const tbody = document.getElementById('package-rows');
     if (!packages.length) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px" class="eb-text-muted">No package data yet.</td></tr>';
