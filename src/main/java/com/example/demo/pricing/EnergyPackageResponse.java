@@ -12,6 +12,8 @@ public record EnergyPackageResponse(
         CountryCode country,
         BigDecimal pricePerKwh,
         BigDecimal marginPerKwh,
+        boolean visible,
+        PackageSource source,
         Instant lastUpdated
 ) {
     public static EnergyPackageResponse from(EnergyPackage energyPackage) {
@@ -22,6 +24,8 @@ public record EnergyPackageResponse(
                 energyPackage.getCountry(),
                 energyPackage.getPricePerKwh(),
                 energyPackage.getMarginPerKwh(),
+                energyPackage.isVisible(),
+                energyPackage.getSource(),
                 energyPackage.getLastUpdated()
         );
     }
