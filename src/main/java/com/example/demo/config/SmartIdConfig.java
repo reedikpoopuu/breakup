@@ -14,7 +14,7 @@ import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Wires the official SK ID Solutions Smart-ID Java client. Defaults (see
+ * Wires the official SK ID Solutions Smart-ID Java client (RP API v3). Defaults (see
  * application.properties) point at SK's public demo relying-party environment - no
  * contract required, only usable with SK's documented demo test identities - and are
  * overridden via app.smartid.* once a real relying party is issued.
