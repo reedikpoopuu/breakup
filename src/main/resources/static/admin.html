@@ -63,6 +63,7 @@
       <div class="eb-admin-tabs">
         <button class="eb-admin-tab is-active" data-tab="suppliers">Supplier Directory</button>
         <button class="eb-admin-tab" data-tab="packages">Default Energy Packages</button>
+        <button class="eb-admin-tab" data-tab="datahub">DataHub Status</button>
       </div>
 
       <!-- ============ VIEW: SUPPLIERS ============ -->
@@ -137,6 +138,24 @@
               <th>Package</th><th>Supplier</th><th>Country</th><th style="text-align:right">Price / kWh</th><th style="text-align:right">Margin</th><th>Source</th><th>Visible to customers</th><th>Last updated</th><th style="text-align:right">Action</th>
             </tr></thead>
             <tbody id="package-rows"><tr><td colspan="9" style="text-align:center;padding:40px" class="eb-text-muted">Loading packages…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ VIEW: DATAHUB STATUS ============ -->
+      <section id="tab-datahub" class="eb-screen">
+        <div class="eb-card-head">
+          <div>
+            <div class="eb-card-title">National DataHub Adapter Status</div>
+            <div class="eb-card-sub">Read-only — configuration is set via environment variables at deploy time, not editable here. Credentials and market-participant identity are never shown, only whether they're set.</div>
+          </div>
+        </div>
+        <div class="eb-table-wrap eb-mt-16">
+          <table class="eb-table">
+            <thead><tr>
+              <th>Source</th><th>Country</th><th>Status</th><th>Base URL</th><th>Auth URL / Realm</th><th>Market participant EIC</th><th>Role</th><th>Credentials</th>
+            </tr></thead>
+            <tbody id="datahub-rows"><tr><td colspan="8" style="text-align:center;padding:40px" class="eb-text-muted">Loading DataHub status…</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -234,7 +253,7 @@
   document.querySelectorAll('.eb-admin-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.eb-admin-tab').forEach(b => b.classList.remove('is-active'));
-      document.querySelectorAll('#tab-suppliers, #tab-packages').forEach(s => s.classList.remove('is-active'));
+      document.querySelectorAll('#tab-suppliers, #tab-packages, #tab-datahub').forEach(s => s.classList.remove('is-active'));
       tab.classList.add('is-active');
       document.getElementById('tab-' + tab.dataset.tab).classList.add('is-active');
     });
@@ -643,8 +662,41 @@
     }
   });
 
+  // ---------- DataHub status (read-only) ----------
+  async function loadDataHubStatus() {
+    const tbody = document.getElementById('datahub-rows');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px" class="eb-text-muted">Loading DataHub status…</td></tr>';
+    let statuses;
+    try {
+      statuses = await apiFetch('/api/admin/datahub/status');
+    } catch (err) {
+      const hint = (err.status === 401 || err.status === 403)
+        ? ' — set an admin API token above to load DataHub status.'
+        : ': ' + escapeHtml(err.message);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--danger-text)">Could not load DataHub status' + hint + '</td></tr>';
+      return;
+    }
+    tbody.innerHTML = statuses.map(s => (
+      '<tr>' +
+      '<td style="font-weight:600;color:var(--gray-900)">' + escapeHtml(s.source) + '</td>' +
+      '<td class="eb-text-muted">' + s.country + '</td>' +
+      '<td>' + (s.configured
+        ? '<span class="eb-badge eb-badge-success">Configured</span>'
+        : '<span class="eb-badge">Not configured</span>') + '</td>' +
+      '<td class="mono eb-text-sm">' + escapeHtml(s.baseUrl || '—') + '</td>' +
+      '<td class="mono eb-text-sm">' + (s.authBaseUrl ? escapeHtml(s.authBaseUrl) + ' / ' + escapeHtml(s.authRealm || '—') : '—') + '</td>' +
+      '<td class="mono eb-text-sm">' + escapeHtml(s.marketParticipantEic || '—') + '</td>' +
+      '<td>' + escapeHtml(s.marketParticipantRole || '—') + '</td>' +
+      '<td>' + (s.credentialsSet
+        ? '<span class="eb-badge eb-badge-success">Set</span>'
+        : '<span class="eb-badge">Not set</span>') + '</td>' +
+      '</tr>'
+    )).join('');
+  }
+
   loadSuppliers();
   loadPackages();
+  loadDataHubStatus();
 })();
 </script>
 </body>
