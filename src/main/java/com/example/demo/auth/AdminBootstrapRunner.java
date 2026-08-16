@@ -7,42 +7,89 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
+
 /**
- * Seeds the initial ADMIN row (Reedik Poopuu, per PM_ANSWERS.txt) on first boot.
- * {@code app.admin.smartid-identity} is operational/secret data supplied via
- * environment variable at deploy time, never hard-coded (ARCH_SPEC.md section 2.2).
- * Until it is set, the app still boots (dev/test with H2) but admin login fails
- * closed, since no ADMIN row exists to match against.
+ * Reconciles the configured ADMIN identities (Reedik Poopuu, per PM_ANSWERS.txt, plus
+ * whoever else {@code app.admin.smartid-identities} lists) to {@link Role#ADMIN} on
+ * every boot - creating the row if it doesn't exist yet, promoting it in place if it
+ * already exists as {@link Role#USER}. Runs every startup, not just the first, so
+ * growing the admin group is "add an identity to the list and restart" and a
+ * misconfigured identity doesn't leave a later, correctly configured one unreachable
+ * (the previous seed-once-ever behavior could do exactly that). {@code
+ * app.admin.smartid-identities} is operational/secret data supplied via environment
+ * variable at deploy time, never hard-coded (ARCH_SPEC.md section 2.2). Until it is
+ * set, the app still boots (dev/test with H2), but admin login fails closed, since no
+ * ADMIN row exists to match against.
  */
 @Component
 public class AdminBootstrapRunner implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AdminBootstrapRunner.class);
 
+    // COUNTRY-NATIONALIDNUMBER, matching what SmartIdRestService.pollAuthentication()
+    // resolves real logins to (identity.getCountry() + "-" + identity.getIdentityNumber()).
+    // Deliberately rejects the raw Smart-ID semantics-identifier wire format
+    // (e.g. PNOEE-40504040001, which SmartIdClient/SemanticsIdentifier use internally) -
+    // that shape looks plausible but can never match a real login, which is exactly how
+    // an ADMIN row went permanently unreachable before this class started validating.
+    private static final Pattern IDENTITY_PATTERN = Pattern.compile("^[A-Z]{2}-[A-Za-z0-9]+$");
+
     private final AppUserRepository repository;
-    private final String adminSmartIdIdentity;
+    private final List<String> adminSmartIdIdentities;
     private final String adminDisplayName;
 
     public AdminBootstrapRunner(
             AppUserRepository repository,
-            @Value("${app.admin.smartid-identity}") String adminSmartIdIdentity,
+            @Value("${app.admin.smartid-identities}") String adminSmartIdIdentities,
             @Value("${app.admin.display-name}") String adminDisplayName) {
         this.repository = repository;
-        this.adminSmartIdIdentity = adminSmartIdIdentity;
+        this.adminSmartIdIdentities = parseIdentities(adminSmartIdIdentities);
         this.adminDisplayName = adminDisplayName;
+    }
+
+    private static List<String> parseIdentities(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .toList();
     }
 
     @Override
     public void run(String... args) {
-        if (repository.existsByRole(Role.ADMIN)) {
-            return;
-        }
-        if (!StringUtils.hasText(adminSmartIdIdentity)) {
-            log.warn("app.admin.smartid-identity is not set - no ADMIN account seeded; "
+        if (adminSmartIdIdentities.isEmpty()) {
+            log.warn("app.admin.smartid-identities is not set - no ADMIN account seeded; "
                     + "admin login will fail closed until it is configured.");
             return;
         }
-        repository.save(new AppUser(adminSmartIdIdentity, adminDisplayName, Role.ADMIN));
-        log.info("Seeded initial ADMIN account for {}", adminDisplayName);
+        for (String identity : adminSmartIdIdentities) {
+            if (!IDENTITY_PATTERN.matcher(identity).matches()) {
+                throw new IllegalStateException(
+                        "app.admin.smartid-identities contains '" + identity + "', which is not in "
+                        + "COUNTRY-NATIONALIDNUMBER form (e.g. EE-40504040001). Refusing to start: "
+                        + "seeding it as-is would create an ADMIN row that can never match a real "
+                        + "login, silently locking every admin out.");
+            }
+        }
+        for (String identity : adminSmartIdIdentities) {
+            reconcile(identity);
+        }
+    }
+
+    private void reconcile(String identity) {
+        AppUser user = repository.findBySmartIdIdentity(identity).orElse(null);
+        if (user == null) {
+            repository.save(new AppUser(identity, adminDisplayName, Role.ADMIN));
+            log.info("Seeded ADMIN account for {}", identity);
+        } else if (user.getRole() != Role.ADMIN) {
+            user.promoteToAdmin();
+            repository.save(user);
+            log.info("Promoted existing account {} to ADMIN", identity);
+        }
     }
 }
