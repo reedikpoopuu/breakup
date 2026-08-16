@@ -132,7 +132,7 @@
           <option value="LV">LV</option>
           <option value="LT">LT</option>
         </select>
-        <input id="smartid-national-id" class="eb-input" type="text" inputmode="numeric" value="30303039914">
+        <input id="smartid-national-id" class="eb-input" type="text" inputmode="numeric" value="40504040001">
       </div>
       <button id="smartid-start-btn" class="eb-btn eb-btn-primary eb-btn-block eb-mt-16"></button>
       <p id="smartid-form-error" class="eb-hidden eb-text-sm" style="color:var(--danger-text);margin-top:8px"></p>
@@ -916,7 +916,7 @@
   document.getElementById('smartid-cancel-btn').addEventListener('click', closeSmartIdModal);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeSmartIdModal(); });
 
-  const POLL_INTERVAL_MS = 1500, POLL_MAX_ATTEMPTS = 10;
+  const POLL_INTERVAL_MS = 1500, POLL_MAX_ATTEMPTS = 60;
   async function pollSmartId(sessionId, attempt) {
     attempt = attempt || 1;
     let poll;

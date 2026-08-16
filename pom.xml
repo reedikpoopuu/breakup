@@ -60,7 +60,7 @@
         <dependency>
             <groupId>ee.sk.smartid</groupId>
             <artifactId>smart-id-java-client</artifactId>
-            <version>2.3.1</version>
+            <version>3.2</version>
         </dependency>
         <!-- smart-id-java-client depends on the JAX-RS API + jersey-media-json-jackson
              but not on a jersey-client provider implementation; without it,
