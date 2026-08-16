@@ -70,6 +70,16 @@ public class EnergyPackage {
         this.lastUpdated = Instant.now();
     }
 
+    public void updateManual(String packageName, String supplierName, CountryCode country,
+                              BigDecimal pricePerKwh, BigDecimal marginPerKwh) {
+        this.packageName = packageName;
+        this.supplierName = supplierName;
+        this.country = country;
+        this.pricePerKwh = pricePerKwh;
+        this.marginPerKwh = marginPerKwh;
+        this.lastUpdated = Instant.now();
+    }
+
     public void setVisible(boolean visible) {
         this.visible = visible;
     }

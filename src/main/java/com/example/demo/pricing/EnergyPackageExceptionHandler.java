@@ -12,4 +12,9 @@ public class EnergyPackageExceptionHandler {
     public ResponseEntity<String> onNotFound(EnergyPackageNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
+
+    @ExceptionHandler(EnergyPackageNotEditableException.class)
+    public ResponseEntity<String> onNotEditable(EnergyPackageNotEditableException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
 }

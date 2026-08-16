@@ -63,6 +63,17 @@ public class EnergyPackageService {
     }
 
     @Transactional
+    public EnergyPackage update(Long id, EnergyPackageRequest request) {
+        EnergyPackage energyPackage = repository.findById(id).orElseThrow(() -> new EnergyPackageNotFoundException(id));
+        if (energyPackage.getSource() != PackageSource.MANUAL) {
+            throw new EnergyPackageNotEditableException(id);
+        }
+        energyPackage.updateManual(request.packageName(), request.supplierName(), request.country(),
+                request.pricePerKwh(), request.marginPerKwh());
+        return energyPackage;
+    }
+
+    @Transactional
     public void delete(Long id) {
         if (!repository.existsById(id)) {
             throw new EnergyPackageNotFoundException(id);

@@ -493,21 +493,30 @@
     }
     tbody.innerHTML = packages
       .sort((a, b) => a.country.localeCompare(b.country) || a.packageName.localeCompare(b.packageName))
-      .map(p => (
-        '<tr>' +
+      .map(p => {
+        const editable = p.source !== 'SCRAPED';
+        return (
+        '<tr data-id="' + p.id + '" data-package-name="' + escapeHtml(p.packageName) + '" data-supplier-name="' + escapeHtml(p.supplierName) + '" data-country="' + p.country + '">' +
         '<td style="font-weight:600;color:var(--gray-900)">' + escapeHtml(p.packageName) + '</td>' +
         '<td>' + escapeHtml(p.supplierName) + '</td>' +
         '<td class="eb-text-muted">' + p.country + '</td>' +
-        '<td class="mono" style="text-align:right">' + formatEur(p.pricePerKwh) + '</td>' +
-        '<td class="mono eb-text-muted" style="text-align:right">' + formatEur(p.marginPerKwh) + '</td>' +
+        '<td style="text-align:right">' + (editable
+          ? '<input type="number" step="0.0001" min="0" data-field="pricePerKwh" value="' + p.pricePerKwh + '" class="eb-input mono" style="width:100px;text-align:right">'
+          : '<span class="mono">' + formatEur(p.pricePerKwh) + '</span>') + '</td>' +
+        '<td style="text-align:right">' + (editable
+          ? '<input type="number" step="0.0001" min="0" data-field="marginPerKwh" value="' + p.marginPerKwh + '" class="eb-input mono" style="width:100px;text-align:right">'
+          : '<span class="mono eb-text-muted">' + formatEur(p.marginPerKwh) + '</span>') + '</td>' +
         '<td>' + (p.source === 'SCRAPED'
           ? '<span class="eb-badge eb-badge-accent">Scraped</span>'
           : '<span class="eb-badge">Manual</span>') + '</td>' +
         '<td><button class="eb-switch' + (p.visible ? ' is-on' : '') + '" data-action="toggle-visibility" data-id="' + p.id + '" data-visible="' + p.visible + '" role="switch" aria-checked="' + p.visible + '" title="' + (p.visible ? 'Visible to customers — click to hide' : 'Hidden from customers — click to show') + '"></button></td>' +
         '<td class="mono eb-text-muted">' + formatTimestamp(p.lastUpdated) + '</td>' +
-        '<td style="text-align:right"><button class="eb-btn eb-btn-secondary eb-btn-sm" data-action="delete-package" data-id="' + p.id + '">Delete</button></td>' +
-        '</tr>'
-      )).join('');
+        '<td style="text-align:right">' +
+        (editable ? '<button class="eb-btn eb-btn-primary eb-btn-sm" data-action="save-package" data-id="' + p.id + '">Save</button> ' : '') +
+        '<button class="eb-btn eb-btn-secondary eb-btn-sm" data-action="delete-package" data-id="' + p.id + '">Delete</button>' +
+        '</td></tr>'
+        );
+      }).join('');
   }
 
   async function loadPackages() {
@@ -524,6 +533,35 @@
   }
 
   document.getElementById('package-rows').addEventListener('click', async (e) => {
+    const saveBtn = e.target.closest('button[data-action="save-package"]');
+    if (saveBtn) {
+      const row = saveBtn.closest('tr');
+      const packageName = row.dataset.packageName;
+      const supplierName = row.dataset.supplierName;
+      const country = row.dataset.country;
+      const pricePerKwh = row.querySelector('input[data-field="pricePerKwh"]').value;
+      const marginPerKwh = row.querySelector('input[data-field="marginPerKwh"]').value;
+
+      const original = saveBtn.textContent;
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      try {
+        await apiFetch('/api/admin/packages/' + row.dataset.id, {
+          method: 'PUT',
+          body: JSON.stringify({
+            packageName, supplierName, country,
+            pricePerKwh: Number(pricePerKwh),
+            marginPerKwh: Number(marginPerKwh)
+          })
+        });
+        await loadPackages();
+        toast(packageName + ' updated');
+      } catch (err) {
+        toast('Failed to save ' + packageName + ': ' + err.message);
+        saveBtn.disabled = false; saveBtn.textContent = original;
+      }
+      return;
+    }
+
     const toggleBtn = e.target.closest('button[data-action="toggle-visibility"]');
     if (toggleBtn) {
       const id = toggleBtn.dataset.id;

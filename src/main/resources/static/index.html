@@ -969,9 +969,8 @@
     closeSmartIdModal();
     if (state.smartId.mode === 'login') {
       if (!state.companies.length) {
-        const tmpl = COMPANY_TEMPLATES[hash(state.country) % 3];
+        const tmpl = COMPANY_TEMPLATES.find(t => t.country === state.country) || COMPANY_TEMPLATES[0];
         const session = newCompanySession(tmpl, 0);
-        session.company.country = state.country;
         state.companies.push(session);
         state.activeCompanyId = session.id;
       }
