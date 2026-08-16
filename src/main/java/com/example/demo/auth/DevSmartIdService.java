@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * any identity as authenticated with no verification whatsoever. Role resolution is
  * untouched - {@link AppUserLoginService} still looks the returned identity up against
  * the real {@link AppUserRepository}, so only an identity matching the ADMIN row seeded
- * by {@link AdminBootstrapRunner} (via {@code app.admin.smartid-identity}) gets
+ * by {@link AdminBootstrapRunner} (via {@code app.admin.smartid-identities}) gets
  * ROLE_ADMIN; everyone else lands as ROLE_USER, exactly as with the real service.
  */
 @Service

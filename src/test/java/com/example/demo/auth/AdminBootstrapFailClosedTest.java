@@ -13,14 +13,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * app.admin.smartid-identity is operational/secret data - it must never be
+ * app.admin.smartid-identities is operational/secret data - it must never be
  * hard-coded, and until it is supplied the app should still boot but admin login
  * fails closed (ARCH_SPEC.md section 2.2).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = "app.admin.smartid-identity=")
+@TestPropertySource(properties = "app.admin.smartid-identities=")
 class AdminBootstrapFailClosedTest {
 
     @Autowired
