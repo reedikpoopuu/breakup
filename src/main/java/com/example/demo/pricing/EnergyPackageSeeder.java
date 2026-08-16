@@ -49,7 +49,7 @@ public class EnergyPackageSeeder implements CommandLineRunner {
         for (SeedRow row : SEED_DATA) {
             if (!repository.existsBySupplierNameAndPackageName(row.supplierName(), row.packageName())) {
                 repository.save(new EnergyPackage(row.packageName(), row.supplierName(), row.country(),
-                        row.pricePerKwh(), row.marginPerKwh()));
+                        row.pricePerKwh(), row.marginPerKwh(), PackageSource.MANUAL));
             }
         }
     }

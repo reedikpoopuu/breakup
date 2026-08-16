@@ -38,6 +38,13 @@ public class EnergyPackage {
     @Column(name = "margin_per_kwh", nullable = false, precision = 10, scale = 4)
     private BigDecimal marginPerKwh;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean visible = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(20) default 'MANUAL'")
+    private PackageSource source;
+
     @Column(name = "last_updated", nullable = false)
     private Instant lastUpdated;
 
@@ -46,12 +53,14 @@ public class EnergyPackage {
     }
 
     public EnergyPackage(String packageName, String supplierName, CountryCode country,
-                          BigDecimal pricePerKwh, BigDecimal marginPerKwh) {
+                          BigDecimal pricePerKwh, BigDecimal marginPerKwh, PackageSource source) {
         this.packageName = packageName;
         this.supplierName = supplierName;
         this.country = country;
         this.pricePerKwh = pricePerKwh;
         this.marginPerKwh = marginPerKwh;
+        this.source = source;
+        this.visible = true;
         this.lastUpdated = Instant.now();
     }
 
@@ -59,6 +68,10 @@ public class EnergyPackage {
         this.pricePerKwh = pricePerKwh;
         this.marginPerKwh = marginPerKwh;
         this.lastUpdated = Instant.now();
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     public Long getId() {
@@ -83,6 +96,14 @@ public class EnergyPackage {
 
     public BigDecimal getMarginPerKwh() {
         return marginPerKwh;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public PackageSource getSource() {
+        return source;
     }
 
     public Instant getLastUpdated() {
