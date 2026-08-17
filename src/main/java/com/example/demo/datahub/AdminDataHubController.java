@@ -38,7 +38,7 @@ public class AdminDataHubController {
                 new DataHubStatusResponse(
                         DataHubSource.ESO, CountryCode.LT, eso.isConfigured(),
                         eso.getBaseUrl(), null, null, null, null,
-                        StringUtils.hasText(eso.getClientId()) && StringUtils.hasText(eso.getClientSecret()))
+                        StringUtils.hasText(eso.getToken()))
         );
     }
 }
