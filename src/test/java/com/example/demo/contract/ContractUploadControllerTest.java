@@ -81,6 +81,16 @@ class ContractUploadControllerTest {
     }
 
     @Test
+    void pricingFieldsAreNullWhenNoAiProviderIsConfigured() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "contract.pdf", "application/pdf",
+                pdfContaining("EIC 38ZEE-1000009--Z"));
+
+        mockMvc.perform(multipart("/api/contracts/parse").file(file).header("Authorization", userAuthHeader()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pricingFields").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
     void rejectsNonPdfUploadsWithBadRequest() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "contract.txt", "text/plain", "not a pdf".getBytes());
 

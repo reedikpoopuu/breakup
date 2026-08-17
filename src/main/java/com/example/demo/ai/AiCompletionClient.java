@@ -10,15 +10,16 @@ package com.example.demo.ai;
  * talks to Anthropic's own Messages API directly, for calling Claude without depending
  * on a compatibility-shim proxy in front of it.
  * <p>
- * This is scaffolding: nothing in this codebase calls it yet. It exists so the
- * free-form contract pricing-extraction step (the part {@link
- * com.example.demo.contract.ContractFieldExtractor}'s deterministic regexes
- * deliberately don't attempt) has a seam to depend on when it's built. Because two
- * beans implement this interface, that future caller needs to pick one explicitly
- * (inject the concrete class, or add a qualifier/property-driven selector at that
- * point) rather than autowiring {@code AiCompletionClient} unqualified.
+ * Because two beans implement this interface, nothing autowires the bare interface
+ * directly - {@link AiCompletionClientRegistry} depends on both concrete classes by
+ * name and resolves whichever one is actually configured, in a fixed preference order.
+ * {@link com.example.demo.contract.ContractPricingAiExtractor} is the one real caller,
+ * going through that registry rather than either client directly.
  */
 public interface AiCompletionClient {
+
+    /** True once the client has everything it needs (base URL/API key/model) to be called. */
+    boolean isConfigured();
 
     /** @throws AiGatewayNotConfiguredException if the gateway isn't configured yet */
     AiCompletionResponse complete(AiCompletionRequest request);
