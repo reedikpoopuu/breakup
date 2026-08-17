@@ -43,16 +43,19 @@ public class EsoClient implements DataHubClient {
     }
 
     @Override
-    public List<ConsumptionRecord> fetchConsumption(String eicCode, LocalDate from, LocalDate to) {
+    public List<ConsumptionRecord> fetchConsumption(String customerEic, String objectEic, boolean customerPermission,
+                                                      LocalDate from, LocalDate to) {
         if (!properties.isConfigured()) {
             throw new DataHubNotConfiguredException(CountryCode.LT);
         }
+        // customerEic/customerPermission are STEP-specific (see DataHubClient) - unused here;
+        // this adapter's own contract is still an unverified guess, unlike Estfeed/StepClient.
         RestClient restClient = restClientBuilder.baseUrl(properties.getBaseUrl()).build();
         String accessToken = fetchAccessToken(restClient);
 
         ConsumptionResponse response = restClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/consumption")
-                        .queryParam("eic", eicCode)
+                        .queryParam("eic", objectEic)
                         .queryParam("from", from)
                         .queryParam("to", to)
                         .build())

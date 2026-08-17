@@ -32,8 +32,8 @@ class EsoClientMockEndpointTest {
 
             EsoClient client = new EsoClient(properties, RestClient.builder());
 
-            List<ConsumptionRecord> records = client.fetchConsumption("LT1234", LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 2, 1));
+            List<ConsumptionRecord> records = client.fetchConsumption("CUSTOMER1", "LT1234", true,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1));
 
             assertThat(records).hasSize(1);
             assertThat(records.get(0).getKwh()).isEqualByComparingTo(new BigDecimal("610.0"));
@@ -49,7 +49,7 @@ class EsoClientMockEndpointTest {
 
         EsoClient client = new EsoClient(properties, RestClient.builder());
 
-        assertThatThrownBy(() -> client.fetchConsumption("LT1234", LocalDate.now(), LocalDate.now()))
+        assertThatThrownBy(() -> client.fetchConsumption("CUSTOMER1", "LT1234", true, LocalDate.now(), LocalDate.now()))
                 .isInstanceOf(DataHubNotConfiguredException.class);
     }
 
@@ -66,8 +66,8 @@ class EsoClientMockEndpointTest {
 
             EsoClient client = new EsoClient(properties, RestClient.builder());
 
-            assertThatThrownBy(() -> client.fetchConsumption("LT1234", LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 2, 1)))
+            assertThatThrownBy(() -> client.fetchConsumption("CUSTOMER1", "LT1234", true,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1)))
                     .isInstanceOf(RestClientResponseException.class);
         }
     }
