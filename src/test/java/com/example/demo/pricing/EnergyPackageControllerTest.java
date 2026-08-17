@@ -81,8 +81,8 @@ class EnergyPackageControllerTest {
     void listsSeededPackagesForAdmin() throws Exception {
         mockMvc.perform(get("/api/admin/packages").header("Authorization", adminAuthHeader()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(9)))
-                .andExpect(jsonPath("$[?(@.supplierName == 'Eesti Energia')]").exists())
+                .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(8)))
+                .andExpect(jsonPath("$[?(@.supplierName == 'Elektrum')]").exists())
                 .andExpect(jsonPath("$[?(@.supplierName == 'Ignitis')]").exists());
     }
 
@@ -105,7 +105,7 @@ class EnergyPackageControllerTest {
     void scrapeAddsRealOffersFromRegisteredSuppliersAndLeavesManualPackagesUntouched() throws Exception {
         String beforeBody = mockMvc.perform(get("/api/admin/packages").header("Authorization", adminAuthHeader()))
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        String manualTimestampBefore = byPackageName(objectMapper.readTree(beforeBody), "Eesti Energia Börs")
+        String manualTimestampBefore = byPackageName(objectMapper.readTree(beforeBody), "Ignitis Standartas")
                 .get("lastUpdated").asText();
 
         String afterBody = mockMvc.perform(post("/api/admin/packages/scrape").header("Authorization", adminAuthHeader()))
@@ -113,7 +113,7 @@ class EnergyPackageControllerTest {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         JsonNode after = objectMapper.readTree(afterBody);
 
-        JsonNode manualAfter = byPackageName(after, "Eesti Energia Börs");
+        JsonNode manualAfter = byPackageName(after, "Ignitis Standartas");
         assertThat(manualAfter.get("lastUpdated").asText()).isEqualTo(manualTimestampBefore);
         assertThat(manualAfter.get("source").asText()).isEqualTo("MANUAL");
 
