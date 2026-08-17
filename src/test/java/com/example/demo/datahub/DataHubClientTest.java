@@ -25,7 +25,8 @@ class DataHubClientTest {
         }
 
         @Override
-        public List<ConsumptionRecord> fetchConsumption(String eicCode, LocalDate from, LocalDate to) {
+        public List<ConsumptionRecord> fetchConsumption(String customerEic, String objectEic, boolean customerPermission,
+                                                          LocalDate from, LocalDate to) {
             return List.of();
         }
     }

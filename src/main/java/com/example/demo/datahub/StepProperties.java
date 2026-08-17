@@ -1,17 +1,24 @@
 package com.example.demo.datahub;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
 
 /**
- * STEP / Sadales tikls (LV) connection settings - "Vienotais datu apmainas standarts"
- * v1.5. Exact auth model (API key vs. mTLS) to be confirmed once the standard PDF is
- * read in full; API key is the placeholder per ARCH_SPEC.md section 3.2.
+ * STEP / Sadales tīkls (LV) connection settings - "Single Data Exchange Standard"
+ * v1.6 (sadalestikls.lv/storage/app/media/platforma/Single_Data_Exchange_Standard_v1.6_ENG.pdf).
+ * Real auth is username/password against a SOAP "Auth service" yielding a JWT
+ * ({@code Authorization: Bearer <JWT>}) - not the static API key this class held
+ * before the spec was read in full. {@code username}/{@code password} are the
+ * "system:system user" credentials, activated once via the spec's {@code
+ * ChangeCredentials} flow (out of band - see StepClient) before they work here.
  */
 @ConfigurationProperties(prefix = "app.datahub.step")
 public class StepProperties {
 
     private String baseUrl;
-    private String apiKey;
+    private String authBaseUrl;
+    private String username;
+    private String password;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -21,15 +28,31 @@ public class StepProperties {
         this.baseUrl = baseUrl;
     }
 
-    public String getApiKey() {
-        return apiKey;
+    public String getAuthBaseUrl() {
+        return authBaseUrl;
     }
 
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
+    public void setAuthBaseUrl(String authBaseUrl) {
+        this.authBaseUrl = authBaseUrl;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public boolean isConfigured() {
-        return apiKey != null && !apiKey.isBlank();
+        return StringUtils.hasText(username) && StringUtils.hasText(password) && StringUtils.hasText(authBaseUrl);
     }
 }

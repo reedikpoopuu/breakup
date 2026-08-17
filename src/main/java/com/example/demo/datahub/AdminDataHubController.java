@@ -33,8 +33,8 @@ public class AdminDataHubController {
                         StringUtils.hasText(estfeed.getClientId()) && StringUtils.hasText(estfeed.getClientSecret())),
                 new DataHubStatusResponse(
                         DataHubSource.STEP, CountryCode.LV, step.isConfigured(),
-                        step.getBaseUrl(), null, null, null, null,
-                        StringUtils.hasText(step.getApiKey())),
+                        step.getBaseUrl(), step.getAuthBaseUrl(), null, null, null,
+                        StringUtils.hasText(step.getUsername()) && StringUtils.hasText(step.getPassword())),
                 new DataHubStatusResponse(
                         DataHubSource.ESO, CountryCode.LT, eso.isConfigured(),
                         eso.getBaseUrl(), null, null, null, null,

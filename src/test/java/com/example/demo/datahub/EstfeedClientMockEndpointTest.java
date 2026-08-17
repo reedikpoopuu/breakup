@@ -64,8 +64,8 @@ class EstfeedClientMockEndpointTest {
 
             EstfeedClient client = new EstfeedClient(properties(endpoint.baseUrl()), RestClient.builder());
 
-            List<ConsumptionRecord> records = client.fetchConsumption("EE1234", LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 1, 2));
+            List<ConsumptionRecord> records = client.fetchConsumption("CUSTOMER1", "EE1234", true,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 2));
 
             assertThat(records).hasSize(1);
             ConsumptionRecord record = records.get(0);
@@ -88,7 +88,7 @@ class EstfeedClientMockEndpointTest {
 
         EstfeedClient client = new EstfeedClient(properties, RestClient.builder());
 
-        assertThatThrownBy(() -> client.fetchConsumption("EE1234", LocalDate.now(), LocalDate.now()))
+        assertThatThrownBy(() -> client.fetchConsumption("CUSTOMER1", "EE1234", true, LocalDate.now(), LocalDate.now()))
                 .isInstanceOf(DataHubNotConfiguredException.class);
     }
 
@@ -101,8 +101,8 @@ class EstfeedClientMockEndpointTest {
 
             EstfeedClient client = new EstfeedClient(properties(endpoint.baseUrl()), RestClient.builder());
 
-            assertThatThrownBy(() -> client.fetchConsumption("EE1234", LocalDate.of(2026, 1, 1),
-                    LocalDate.of(2026, 1, 2)))
+            assertThatThrownBy(() -> client.fetchConsumption("CUSTOMER1", "EE1234", true,
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 2)))
                     .isInstanceOf(RestClientResponseException.class);
         }
     }

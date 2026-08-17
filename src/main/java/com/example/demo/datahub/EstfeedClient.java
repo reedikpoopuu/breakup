@@ -79,16 +79,19 @@ public class EstfeedClient implements DataHubClient {
     }
 
     @Override
-    public List<ConsumptionRecord> fetchConsumption(String eicCode, LocalDate from, LocalDate to) {
+    public List<ConsumptionRecord> fetchConsumption(String customerEic, String objectEic, boolean customerPermission,
+                                                      LocalDate from, LocalDate to) {
         if (!properties.isConfigured()) {
             throw new DataHubNotConfiguredException(CountryCode.EE);
         }
+        // customerEic/customerPermission are STEP-specific (see DataHubClient) - Estfeed's real
+        // v2 endpoint has no per-call consent field, only the metering point.
         String accessToken = fetchAccessToken();
 
         RestClient restClient = restClientBuilder.baseUrl(properties.getBaseUrl()).build();
         BulkResponse response = restClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v2/metering-data/electricity")
-                        .queryParam("meteringPointEics", eicCode)
+                        .queryParam("meteringPointEics", objectEic)
                         .queryParam("periodStart", from)
                         .queryParam("periodEnd", to)
                         .build())
