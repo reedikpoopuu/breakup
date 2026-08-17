@@ -11,9 +11,11 @@ import java.util.regex.Pattern;
 /**
  * Deterministic, regex-only extraction of EIC codes and company registry codes from
  * contract text - step 2 of contract field extraction (step 1 is
- * {@link ContractPdfTextExtractor}). No AI call involved; that's a separate, not-yet-built
- * step for the free-form pricing/contract-terms fields, which don't have a fixed
- * format the way these two do.
+ * {@link ContractPdfTextExtractor}, step 3 is {@link ContractPricingAiExtractor}). No AI
+ * call involved here; {@code pricingFields} on the returned {@link
+ * ExtractedContractFields} is always null from this class - the free-form
+ * pricing/contract-terms fields don't have a fixed format the way these two do, so
+ * {@link ContractUploadController} fills that field in separately via step 3.
  * <p>
  * <b>EIC codes (confirmed):</b> {@code \d{2}[XYZWTVA][A-Z0-9-]{12}[A-Z0-9]}, a real
  * 16-character pattern transcribed from Elering's live Estfeed OpenAPI document
@@ -70,6 +72,6 @@ public class ContractFieldExtractor {
             }
         }
 
-        return new ExtractedContractFields(eicCodes, registryCandidates);
+        return new ExtractedContractFields(eicCodes, registryCandidates, null);
     }
 }

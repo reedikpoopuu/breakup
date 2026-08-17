@@ -19,10 +19,13 @@ public class ContractUploadController {
 
     private final ContractPdfTextExtractor textExtractor;
     private final ContractFieldExtractor fieldExtractor;
+    private final ContractPricingAiExtractor pricingAiExtractor;
 
-    public ContractUploadController(ContractPdfTextExtractor textExtractor, ContractFieldExtractor fieldExtractor) {
+    public ContractUploadController(ContractPdfTextExtractor textExtractor, ContractFieldExtractor fieldExtractor,
+                                     ContractPricingAiExtractor pricingAiExtractor) {
         this.textExtractor = textExtractor;
         this.fieldExtractor = fieldExtractor;
+        this.pricingAiExtractor = pricingAiExtractor;
     }
 
     @PostMapping("/parse")
@@ -37,6 +40,8 @@ public class ContractUploadController {
             throw new ContractPdfUnreadableException(e);
         }
         String text = textExtractor.extractText(bytes);
-        return fieldExtractor.extract(text);
+        ExtractedContractFields regexFields = fieldExtractor.extract(text);
+        AiExtractedPricingFields pricingFields = pricingAiExtractor.extract(text).orElse(null);
+        return new ExtractedContractFields(regexFields.eicCodes(), regexFields.registryCodeCandidates(), pricingFields);
     }
 }

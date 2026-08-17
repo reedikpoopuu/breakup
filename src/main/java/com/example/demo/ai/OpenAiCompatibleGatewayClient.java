@@ -44,6 +44,11 @@ public class OpenAiCompatibleGatewayClient implements AiCompletionClient {
     }
 
     @Override
+    public boolean isConfigured() {
+        return properties.isConfigured();
+    }
+
+    @Override
     public AiCompletionResponse complete(AiCompletionRequest request) {
         if (!properties.isConfigured()) {
             throw new AiGatewayNotConfiguredException();
