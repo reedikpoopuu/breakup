@@ -7,7 +7,13 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 
-/** Seeds default energy offers so the Admin Control Room's package matrix isn't empty on first boot. */
+/**
+ * Seeds default energy offers so the Admin Control Room's package matrix isn't empty on
+ * first boot. Every {@code supplierName} here must match a real supplier {@code name}
+ * seeded by {@code SupplierSeeder} - a name that doesn't (e.g. a past "Eesti Energia"
+ * entry, which isn't a real switchable supplier brand) reappears on every restart with
+ * no way to remove it permanently, since this runs unconditionally at each boot.
+ */
 @Component
 public class EnergyPackageSeeder implements CommandLineRunner {
 
@@ -18,8 +24,6 @@ public class EnergyPackageSeeder implements CommandLineRunner {
     private static final List<SeedRow> SEED_DATA = List.of(
             new SeedRow("Enefit Kindel 12", "Enefit", CountryCode.EE,
                     new BigDecimal("0.1420"), new BigDecimal("0.0180")),
-            new SeedRow("Eesti Energia Börs", "Eesti Energia", CountryCode.EE,
-                    new BigDecimal("0.1180"), new BigDecimal("0.0095")),
             new SeedRow("Alexela Kindel", "Alexela", CountryCode.EE,
                     new BigDecimal("0.1390"), new BigDecimal("0.0165")),
             new SeedRow("Elektrum Fix 12", "Elektrum", CountryCode.EE,
