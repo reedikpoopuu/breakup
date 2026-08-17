@@ -176,6 +176,10 @@
       upload_title: 'Drag & drop your contract PDF here, or click to browse',
       upload_sub: 'We read the supplier, plan, rate and expiry directly from the document.',
       ai_warning: 'Your contract is analyzed by a third-party AI service to extract these details — its text leaves our systems for that analysis. Do not upload documents containing data you are not authorized to share externally.',
+      confirm_title: 'Confirm what we found', confirm_sub: 'Check every field below against your actual contract and correct anything that looks wrong before continuing.',
+      confirm_manual_notice: 'Automatic pricing extraction wasn’t available for this upload - please fill in the pricing fields yourself.',
+      confirm_registry_code: 'Company registry code', confirm_eic_code: 'EIC code',
+      confirm_cancel: 'Cancel', confirm_save: 'Looks right, continue',
       uploading: 'Uploading contract…', analyzing: 'Analyzing contract…',
       fetching: 'Requesting 12 months of consumption data from {datahub}…',
       k_supplier: 'Supplier', k_plan: 'Plan', k_rate: 'Rate', k_type: 'Contract type',
@@ -228,6 +232,10 @@
       upload_title: 'Lohista oma lepingu PDF siia või klõpsa, et valida fail',
       upload_sub: 'Loeme dokumendist tarnija, paketi, hinna ja lõppemise kuupäeva.',
       ai_warning: 'Sinu lepingut analüüsib nende andmete tuvastamiseks kolmanda osapoole AI-teenus — dokumendi tekst lahkub selleks analüüsiks meie süsteemidest. Ära laadi üles dokumente, mille välist jagamist sul pole õigust lubada.',
+      confirm_title: 'Kinnita leitud andmed', confirm_sub: 'Kontrolli iga välja oma tegeliku lepingu järgi ja paranda, mis vajab parandamist, enne jätkamist.',
+      confirm_manual_notice: 'Automaatne hinnaandmete tuvastamine polnud selle üleslaadimise jaoks saadaval - palun täida hinnaväljad ise.',
+      confirm_registry_code: 'Ettevõtte registrikood', confirm_eic_code: 'EIC kood',
+      confirm_cancel: 'Loobu', confirm_save: 'Vastab tõele, jätka',
       uploading: 'Lepingu üleslaadimine…', analyzing: 'Lepingu analüüsimine…',
       fetching: 'Küsime 12 kuu tarbimisandmeid allikast {datahub}…',
       k_supplier: 'Tarnija', k_plan: 'Pakett', k_rate: 'Hind', k_type: 'Lepingu tüüp',
@@ -280,6 +288,10 @@
       upload_title: 'Ievelc sava līguma PDF šeit vai noklikšķini, lai izvēlētos failu',
       upload_sub: 'Nolasām piegādātāju, plānu, tarifu un derīguma termiņu tieši no dokumenta.',
       ai_warning: 'Jūsu līgumu šo datu iegūšanai analizē trešās puses AI pakalpojums — dokumenta teksts šai analīzei tiek nosūtīts ārpus mūsu sistēmām. Neaugšupielādējiet dokumentus, kuru ārēju kopīgošanu jums nav tiesību atļaut.',
+      confirm_title: 'Apstipriniet atrasto', confirm_sub: 'Pārbaudiet katru lauku pret savu faktisko līgumu un izlabojiet nepareizo pirms turpināšanas.',
+      confirm_manual_notice: 'Automātiska cenu datu iegūšana šai augšupielādei nebija pieejama - lūdzu, aizpildiet cenu laukus pats.',
+      confirm_registry_code: 'Uzņēmuma reģistrācijas numurs', confirm_eic_code: 'EIC kods',
+      confirm_cancel: 'Atcelt', confirm_save: 'Izskatās pareizi, turpināt',
       uploading: 'Līgums tiek augšupielādēts…', analyzing: 'Līguma analīze…',
       fetching: 'Pieprasām 12 mēnešu patēriņa datus no {datahub}…',
       k_supplier: 'Piegādātājs', k_plan: 'Plāns', k_rate: 'Tarifs', k_type: 'Līguma veids',
@@ -332,6 +344,10 @@
       upload_title: 'Nuvilk savo sutarties PDF čia arba spustelėk, kad pasirinktum failą',
       upload_sub: 'Iš dokumento nuskaitome tiekėją, planą, tarifą ir galiojimo pabaigą.',
       ai_warning: 'Jūsų sutartį šiems duomenims nustatyti analizuoja trečiosios šalies DI paslauga — dokumento tekstas šiai analizei perduodamas už mūsų sistemų ribų. Neįkelkite dokumentų, kurių išorinio bendrinimo neturite teisės leisti.',
+      confirm_title: 'Patvirtinkite rastus duomenis', confirm_sub: 'Patikrinkite kiekvieną lauką pagal savo tikrąją sutartį ir ištaisykite, kas atrodo neteisinga, prieš tęsdami.',
+      confirm_manual_notice: 'Automatinis kainos duomenų nustatymas šiam įkėlimui nebuvo prieinamas - įveskite kainos laukus patys.',
+      confirm_registry_code: 'Įmonės kodas', confirm_eic_code: 'EIC kodas',
+      confirm_cancel: 'Atšaukti', confirm_save: 'Atrodo teisingai, tęsti',
       uploading: 'Sutartis įkeliama…', analyzing: 'Sutarties analizė…',
       fetching: 'Prašome 12 mėnesių suvartojimo duomenų iš {datahub}…',
       k_supplier: 'Tiekėjas', k_plan: 'Planas', k_rate: 'Tarifas', k_type: 'Sutarties tipas',
@@ -452,7 +468,10 @@
         annualKwh: months.reduce((a, b) => a + b, 0) },
       currentContract: template.currentContract,
       monthsRaw: months,
-      uploadStatus: 'idle', // idle | uploading | done
+      uploadStatus: 'idle', // idle | uploading | confirming | done
+      uploadError: null,
+      parsedFields: null, // raw /api/contracts/parse response, kept for reference
+      draft: null, // editable copy of parsed fields shown on the confirm screen
       consumptionStatus: 'pending', // pending | analyzing | fetching | ready
       suppliers: [],
       quotes: [],
@@ -488,7 +507,11 @@
     const opts = Object.assign({}, options);
     opts.headers = Object.assign({}, opts.headers);
     if (state.auth.token) opts.headers.Authorization = 'Bearer ' + state.auth.token;
-    if (opts.body && !opts.headers['Content-Type']) opts.headers['Content-Type'] = 'application/json';
+    // FormData bodies (file uploads) must NOT get an explicit Content-Type - the browser
+    // sets its own multipart boundary, and overriding it here would break the upload.
+    if (opts.body && !opts.headers['Content-Type'] && !(opts.body instanceof FormData)) {
+      opts.headers['Content-Type'] = 'application/json';
+    }
     const res = await fetch(url, opts);
     if (res.status === 204) return null;
     let data = null;
@@ -583,6 +606,48 @@
   }
 
   /* =====================================================================
+     Render: contract-parse confirmation / edit-in-place form
+     ===================================================================== */
+  function textField(id, labelKey, value, type) {
+    const stepAttr = type === 'number' ? ' step="0.001"' : '';
+    return '<div class="eb-field"><label class="eb-label" for="' + id + '">' + t(labelKey) + '</label>' +
+      '<input class="eb-input" id="' + id + '" type="' + (type || 'text') + '"' + stepAttr + ' value="' + escapeHtml(value == null ? '' : value) + '"></div>';
+  }
+  function typeSelectField(value) {
+    const options = ['fixed', 'spot'].map(v =>
+      '<option value="' + v + '"' + (v === value ? ' selected' : '') + '>' + t(v === 'fixed' ? 'plan_fixed' : 'plan_spot') + '</option>'
+    ).join('');
+    return '<div class="eb-field"><label class="eb-label" for="confirm-type">' + t('k_type') + '</label>' +
+      '<select class="eb-select" id="confirm-type">' + options + '</select></div>';
+  }
+
+  function renderConfirmCard(c) {
+    const d = c.draft;
+    const aiUnavailable = !c.parsedFields || !c.parsedFields.pricingFields;
+    return '<div class="eb-card">' +
+      '<div class="eb-card-head"><div>' +
+      '<div class="eb-card-title">' + t('confirm_title') + '</div>' +
+      '<div class="eb-card-sub">' + t('confirm_sub') + '</div>' +
+      '</div></div>' +
+      (aiUnavailable ? '<div class="eb-banner eb-banner-accent">' + t('confirm_manual_notice') + '</div>' : '') +
+      '<div class="eb-field-grid">' +
+      textField('confirm-supplier', 'k_supplier', d.supplier) +
+      textField('confirm-plan', 'k_plan', d.plan) +
+      textField('confirm-rate', 'k_rate', d.rate, 'number') +
+      typeSelectField(d.type) +
+      textField('confirm-enddate', 'k_expiry', d.endDate, 'date') +
+      textField('confirm-penalty', 'k_penalty', d.penalty, 'number') +
+      textField('confirm-earliestswitch', 'k_earliest', d.earliestSwitch, 'date') +
+      textField('confirm-registrycode', 'confirm_registry_code', d.registryCode) +
+      textField('confirm-eic', 'confirm_eic_code', d.eicCode) +
+      '</div>' +
+      '<div class="eb-row eb-row-gap-8 eb-mt-16">' +
+      '<button class="eb-btn eb-btn-secondary" id="confirm-cancel-btn">' + t('confirm_cancel') + '</button>' +
+      '<button class="eb-btn eb-btn-primary" id="confirm-save-btn" style="flex:1">' + t('confirm_save') + '</button>' +
+      '</div></div>';
+  }
+
+  /* =====================================================================
      Render: Dashboard
      ===================================================================== */
   function renderDashboard() {
@@ -603,7 +668,9 @@
       card.innerHTML =
         '<div class="eb-card">' +
         '<div class="eb-upload-warning">' + t('ai_warning') + '</div>' +
+        (c.uploadError ? '<div class="eb-banner eb-mt-16" style="background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger-text)">' + escapeHtml(c.uploadError) + '</div>' : '') +
         '<div class="eb-upload" id="upload-zone">' +
+        '<input type="file" id="upload-file-input" accept="application/pdf" class="eb-hidden">' +
         '<div class="eb-upload-title">' + t('upload_title') + '</div>' +
         '<div class="eb-upload-sub">' + t('upload_sub') + '</div></div></div>';
       ctaWrap.classList.add('eb-hidden');
@@ -611,6 +678,11 @@
     }
     if (c.uploadStatus === 'uploading') {
       card.innerHTML = '<div class="eb-card"><div class="eb-async"><svg class="eb-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>' + t('uploading') + '</div></div>';
+      ctaWrap.classList.add('eb-hidden');
+      return;
+    }
+    if (c.uploadStatus === 'confirming') {
+      card.innerHTML = renderConfirmCard(c);
       ctaWrap.classList.add('eb-hidden');
       return;
     }
@@ -1035,16 +1107,39 @@
       return;
     }
 
-    if (el.closest('#upload-zone')) {
+    if (el.closest('#upload-zone') && el.id !== 'upload-file-input') {
+      const fileInput = document.getElementById('upload-file-input');
+      if (fileInput) fileInput.click();
+      return;
+    }
+
+    if (el.id === 'confirm-cancel-btn') {
       const c = activeCompany(); if (!c) return;
-      c.uploadStatus = 'uploading'; render();
+      c.uploadStatus = 'idle'; c.uploadError = null; c.parsedFields = null; c.draft = null;
+      render();
+      return;
+    }
+
+    if (el.id === 'confirm-save-btn') {
+      const c = activeCompany(); if (!c) return;
+      c.currentContract = {
+        supplier: document.getElementById('confirm-supplier').value.trim(),
+        plan: document.getElementById('confirm-plan').value.trim(),
+        rate: parseFloat(document.getElementById('confirm-rate').value) || 0,
+        type: document.getElementById('confirm-type').value,
+        endDate: document.getElementById('confirm-enddate').value,
+        penalty: parseFloat(document.getElementById('confirm-penalty').value) || 0,
+        earliestSwitch: document.getElementById('confirm-earliestswitch').value,
+      };
+      c.company.registryCode = document.getElementById('confirm-registrycode').value.trim();
+      c.company.eicCode = document.getElementById('confirm-eic').value.trim();
+      c.parsedFields = null; c.draft = null;
+      c.uploadStatus = 'done'; c.consumptionStatus = 'analyzing';
+      render();
       setTimeout(() => {
-        c.uploadStatus = 'done'; c.consumptionStatus = 'analyzing'; render();
-        setTimeout(() => {
-          c.consumptionStatus = 'fetching'; render();
-          setTimeout(() => { c.consumptionStatus = 'ready'; render(); }, 1500);
-        }, 1300);
-      }, 1100);
+        c.consumptionStatus = 'fetching'; render();
+        setTimeout(() => { c.consumptionStatus = 'ready'; render(); }, 1500);
+      }, 1300);
       return;
     }
 
@@ -1110,6 +1205,57 @@
       URL.revokeObjectURL(a.href);
       return;
     }
+  });
+
+  /* =====================================================================
+     Contract upload — real backend call to POST /api/contracts/parse
+     ===================================================================== */
+  async function startContractUpload(c, file) {
+    c.uploadStatus = 'uploading'; c.uploadError = null; render();
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await apiFetch('/api/contracts/parse', { method: 'POST', body: formData });
+      const pricing = result.pricingFields || {};
+      const registryCandidate = (result.registryCodeCandidates && result.registryCodeCandidates[0]) || null;
+      const eicCode = (result.eicCodes && result.eicCodes[0]) || c.company.eicCode || '';
+      c.parsedFields = result;
+      c.draft = {
+        supplier: pricing.supplierName || c.currentContract.supplier || '',
+        plan: pricing.planName || c.currentContract.plan || '',
+        rate: pricing.pricePerKwh != null ? pricing.pricePerKwh : c.currentContract.rate,
+        type: (pricing.contractType || c.currentContract.type || 'fixed').toLowerCase(),
+        endDate: pricing.expiryDate || c.currentContract.endDate || '',
+        penalty: pricing.earlyTerminationPenaltyEur != null ? pricing.earlyTerminationPenaltyEur : c.currentContract.penalty,
+        earliestSwitch: pricing.expiryDate || c.currentContract.earliestSwitch || '',
+        registryCode: registryCandidate ? registryCandidate.code : (c.company.registryCode || ''),
+        eicCode: eicCode,
+      };
+      c.uploadStatus = 'confirming';
+    } catch (err) {
+      c.uploadError = err.message || 'Upload failed. Please try again.';
+      c.uploadStatus = 'idle';
+    }
+    render();
+  }
+
+  document.body.addEventListener('change', (e) => {
+    if (e.target.id === 'upload-file-input') {
+      const file = e.target.files && e.target.files[0];
+      const c = activeCompany();
+      if (file && c) startContractUpload(c, file);
+    }
+  });
+  document.body.addEventListener('dragover', (e) => {
+    if (e.target.closest && e.target.closest('#upload-zone')) e.preventDefault();
+  });
+  document.body.addEventListener('drop', (e) => {
+    const zone = e.target.closest && e.target.closest('#upload-zone');
+    if (!zone) return;
+    e.preventDefault();
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    const c = activeCompany();
+    if (file && c) startContractUpload(c, file);
   });
 
   /* Init */
