@@ -64,6 +64,7 @@
         <button class="eb-admin-tab is-active" data-tab="suppliers">Supplier Directory</button>
         <button class="eb-admin-tab" data-tab="packages">Default Energy Packages</button>
         <button class="eb-admin-tab" data-tab="datahub">DataHub Status</button>
+        <button class="eb-admin-tab" data-tab="audit">Audit Log</button>
       </div>
 
       <!-- ============ VIEW: SUPPLIERS ============ -->
@@ -156,6 +157,28 @@
               <th>Source</th><th>Country</th><th>Status</th><th>Base URL</th><th>Auth URL / Realm</th><th>Market participant EIC</th><th>Role</th><th>Credentials</th>
             </tr></thead>
             <tbody id="datahub-rows"><tr><td colspan="8" style="text-align:center;padding:40px" class="eb-text-muted">Loading DataHub status…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ VIEW: AUDIT LOG ============ -->
+      <section id="tab-audit" class="eb-screen">
+        <div class="eb-card-head">
+          <div>
+            <div class="eb-card-title">Customer Action Audit Log</div>
+            <div class="eb-card-sub">Every contract-parse request a customer made, successful or not — proof of what was requested and what the system returned, for handing to an authority if asked.</div>
+          </div>
+          <button id="export-audit-btn" class="eb-btn eb-btn-secondary eb-btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="eb-table-wrap eb-mt-16">
+          <table class="eb-table">
+            <thead><tr>
+              <th>Time</th><th>Action</th><th>Actor</th><th>Request</th><th>Outcome</th><th>Details</th>
+            </tr></thead>
+            <tbody id="audit-rows"><tr><td colspan="6" style="text-align:center;padding:40px" class="eb-text-muted">Loading audit log…</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -253,9 +276,13 @@
   document.querySelectorAll('.eb-admin-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.eb-admin-tab').forEach(b => b.classList.remove('is-active'));
-      document.querySelectorAll('#tab-suppliers, #tab-packages, #tab-datahub').forEach(s => s.classList.remove('is-active'));
+      document.querySelectorAll('#tab-suppliers, #tab-packages, #tab-datahub, #tab-audit').forEach(s => s.classList.remove('is-active'));
       tab.classList.add('is-active');
       document.getElementById('tab-' + tab.dataset.tab).classList.add('is-active');
+      // Audit log entries land from customer actions taken *while this page is open* in
+      // another tab/session - re-fetch on every switch to this tab rather than only once
+      // at page load, or a newly-logged action would be invisible until a full reload.
+      if (tab.dataset.tab === 'audit') loadAuditLog();
     });
   });
 
@@ -694,9 +721,69 @@
     )).join('');
   }
 
+  // ---------- Audit log ----------
+  function formatDetail(entry) {
+    if (entry.successful) {
+      return '<span class="mono eb-text-sm eb-text-muted" title="' + escapeHtml(entry.responseSummary || '') + '">' +
+        escapeHtml((entry.responseSummary || '').slice(0, 80)) + ((entry.responseSummary || '').length > 80 ? '…' : '') + '</span>';
+    }
+    return '<span class="eb-text-sm" style="color:var(--danger-text)">' + escapeHtml(entry.errorMessage || '') + '</span>';
+  }
+
+  async function loadAuditLog() {
+    const tbody = document.getElementById('audit-rows');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px" class="eb-text-muted">Loading audit log…</td></tr>';
+    let entries;
+    try {
+      entries = await apiFetch('/api/admin/audit-log');
+    } catch (err) {
+      const hint = (err.status === 401 || err.status === 403)
+        ? ' — set an admin API token above to load the audit log.'
+        : ': ' + escapeHtml(err.message);
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--danger-text)">Could not load audit log' + hint + '</td></tr>';
+      return;
+    }
+    if (!entries.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px" class="eb-text-muted">No audit log entries yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = entries.map(entry => (
+      '<tr>' +
+      '<td class="mono eb-text-sm eb-text-muted">' + formatTimestamp(entry.occurredAt) + '</td>' +
+      '<td>' + escapeHtml(entry.actionType) + '</td>' +
+      '<td class="mono eb-text-sm">' + escapeHtml(entry.actorSmartIdIdentity) + (entry.actorDisplayName ? ' <span class="eb-text-muted">(' + escapeHtml(entry.actorDisplayName) + ')</span>' : '') + '</td>' +
+      '<td class="eb-text-sm">' + escapeHtml(entry.requestDetail || '—') + '</td>' +
+      '<td>' + (entry.successful
+        ? '<span class="eb-badge eb-badge-success">Success</span>'
+        : '<span class="eb-badge eb-badge-danger">Failed</span>') + '</td>' +
+      '<td>' + formatDetail(entry) + '</td>' +
+      '</tr>'
+    )).join('');
+  }
+
+  document.getElementById('export-audit-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('export-audit-btn');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/audit-log/export.csv', { headers: authHeaders() });
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'audit-log-export.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (err) {
+      toast('Failed to export audit log: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   loadSuppliers();
   loadPackages();
   loadDataHubStatus();
+  loadAuditLog();
 })();
 </script>
 </body>

@@ -1,5 +1,7 @@
 package com.example.demo.contract;
 
+import com.example.demo.audit.AuditLogEntry;
+import com.example.demo.audit.AuditLogRepository;
 import com.example.demo.auth.AppUser;
 import com.example.demo.auth.AppUserRepository;
 import com.example.demo.auth.Role;
@@ -20,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,6 +40,9 @@ class ContractUploadControllerTest {
 
     @Autowired
     TokenService tokenService;
+
+    @Autowired
+    AuditLogRepository auditLogRepository;
 
     private String userAuthHeader() {
         AppUser user = appUserRepository.save(new AppUser("LV-contract-" + System.nanoTime(), "Some User", Role.USER));
@@ -104,5 +110,38 @@ class ContractUploadControllerTest {
 
         mockMvc.perform(multipart("/api/contracts/parse").file(file).header("Authorization", userAuthHeader()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void successfulUploadIsRecordedInTheAuditLog() throws Exception {
+        long before = auditLogRepository.count();
+        MockMultipartFile file = new MockMultipartFile("file", "contract.pdf", "application/pdf",
+                pdfContaining("EIC 38ZEE-1000009--Z"));
+
+        mockMvc.perform(multipart("/api/contracts/parse").file(file).header("Authorization", userAuthHeader()))
+                .andExpect(status().isOk());
+
+        assertThat(auditLogRepository.count()).isEqualTo(before + 1);
+        AuditLogEntry entry = auditLogRepository.findAllByOrderByOccurredAtDesc().get(0);
+        assertThat(entry.getActionType()).isEqualTo(com.example.demo.audit.AuditActionType.CONTRACT_PARSE);
+        assertThat(entry.isSuccessful()).isTrue();
+        assertThat(entry.getRequestDetail()).contains("contract.pdf");
+        assertThat(entry.getResponseSummary()).contains("38ZEE-1000009--Z");
+        assertThat(entry.getErrorMessage()).isNull();
+    }
+
+    @Test
+    void rejectedUploadIsAlsoRecordedInTheAuditLog() throws Exception {
+        long before = auditLogRepository.count();
+        MockMultipartFile file = new MockMultipartFile("file", "contract.txt", "text/plain", "not a pdf".getBytes());
+
+        mockMvc.perform(multipart("/api/contracts/parse").file(file).header("Authorization", userAuthHeader()))
+                .andExpect(status().isBadRequest());
+
+        assertThat(auditLogRepository.count()).isEqualTo(before + 1);
+        AuditLogEntry entry = auditLogRepository.findAllByOrderByOccurredAtDesc().get(0);
+        assertThat(entry.isSuccessful()).isFalse();
+        assertThat(entry.getErrorMessage()).isNotBlank();
+        assertThat(entry.getResponseSummary()).isNull();
     }
 }

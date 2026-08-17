@@ -1,5 +1,9 @@
 package com.example.demo.contract;
 
+import com.example.demo.audit.AuditActionType;
+import com.example.demo.audit.AuditLogService;
+import com.example.demo.auth.TokenService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,8 +14,11 @@ import java.io.IOException;
 
 /**
  * Any authenticated user can upload their own contract PDF (not admin-only - this is a
- * customer self-service step). Nothing is persisted here: extraction is synchronous
+ * customer self-service step). Nothing is persisted here beyond the audit trail (see
+ * {@link AuditLogService}, {@code AdminAuditLogController}): extraction is synchronous
  * and the result is handed back for the caller to confirm before anything is saved.
+ * Every attempt - successful or not - is recorded, since a rejected upload is still a
+ * customer action worth having proof of.
  */
 @RestController
 @RequestMapping("/api/contracts")
@@ -20,28 +27,42 @@ public class ContractUploadController {
     private final ContractPdfTextExtractor textExtractor;
     private final ContractFieldExtractor fieldExtractor;
     private final ContractPricingAiExtractor pricingAiExtractor;
+    private final AuditLogService auditLogService;
 
     public ContractUploadController(ContractPdfTextExtractor textExtractor, ContractFieldExtractor fieldExtractor,
-                                     ContractPricingAiExtractor pricingAiExtractor) {
+                                     ContractPricingAiExtractor pricingAiExtractor, AuditLogService auditLogService) {
         this.textExtractor = textExtractor;
         this.fieldExtractor = fieldExtractor;
         this.pricingAiExtractor = pricingAiExtractor;
+        this.auditLogService = auditLogService;
     }
 
     @PostMapping("/parse")
-    public ExtractedContractFields parse(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("Uploaded file is empty");
-        }
-        byte[] bytes;
+    public ExtractedContractFields parse(@RequestParam("file") MultipartFile file,
+                                          @AuthenticationPrincipal TokenService.Principal actor) {
+        String requestDetail = file.getOriginalFilename() + " (" + file.getSize() + " bytes)";
         try {
-            bytes = file.getBytes();
-        } catch (IOException e) {
-            throw new ContractPdfUnreadableException(e);
+            if (file.isEmpty()) {
+                throw new IllegalArgumentException("Uploaded file is empty");
+            }
+            byte[] bytes;
+            try {
+                bytes = file.getBytes();
+            } catch (IOException e) {
+                throw new ContractPdfUnreadableException(e);
+            }
+            String text = textExtractor.extractText(bytes);
+            ExtractedContractFields regexFields = fieldExtractor.extract(text);
+            AiExtractedPricingFields pricingFields = pricingAiExtractor.extract(text).orElse(null);
+            ExtractedContractFields result = new ExtractedContractFields(
+                    regexFields.eicCodes(), regexFields.registryCodeCandidates(), pricingFields);
+            auditLogService.recordWithJsonResponse(AuditActionType.CONTRACT_PARSE, actor, null,
+                    requestDetail, result, true, null);
+            return result;
+        } catch (RuntimeException e) {
+            auditLogService.recordWithJsonResponse(AuditActionType.CONTRACT_PARSE, actor, null,
+                    requestDetail, null, false, e.getMessage());
+            throw e;
         }
-        String text = textExtractor.extractText(bytes);
-        ExtractedContractFields regexFields = fieldExtractor.extract(text);
-        AiExtractedPricingFields pricingFields = pricingAiExtractor.extract(text).orElse(null);
-        return new ExtractedContractFields(regexFields.eicCodes(), regexFields.registryCodeCandidates(), pricingFields);
     }
 }
