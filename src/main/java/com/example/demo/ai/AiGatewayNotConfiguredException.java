@@ -4,6 +4,10 @@ package com.example.demo.ai;
 public class AiGatewayNotConfiguredException extends RuntimeException {
 
     public AiGatewayNotConfiguredException() {
-        super("AI gateway is not configured - set app.ai.gateway.base-url / api-key / model");
+        this("set app.ai.gateway.base-url / api-key / model");
+    }
+
+    public AiGatewayNotConfiguredException(String configurationHint) {
+        super("AI gateway is not configured - " + configurationHint);
     }
 }
