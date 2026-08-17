@@ -175,6 +175,7 @@
       dash_title: 'Current contract and consumption', dash_sub: 'Step 1 of 3',
       upload_title: 'Drag & drop your contract PDF here, or click to browse',
       upload_sub: 'We read the supplier, plan, rate and expiry directly from the document.',
+      ai_warning: 'Your contract is analyzed by a third-party AI service to extract these details — its text leaves our systems for that analysis. Do not upload documents containing data you are not authorized to share externally.',
       uploading: 'Uploading contract…', analyzing: 'Analyzing contract…',
       fetching: 'Requesting 12 months of consumption data from {datahub}…',
       k_supplier: 'Supplier', k_plan: 'Plan', k_rate: 'Rate', k_type: 'Contract type',
@@ -226,6 +227,7 @@
       dash_title: 'Praegune leping ja tarbimine', dash_sub: 'Samm 1/3',
       upload_title: 'Lohista oma lepingu PDF siia või klõpsa, et valida fail',
       upload_sub: 'Loeme dokumendist tarnija, paketi, hinna ja lõppemise kuupäeva.',
+      ai_warning: 'Sinu lepingut analüüsib nende andmete tuvastamiseks kolmanda osapoole AI-teenus — dokumendi tekst lahkub selleks analüüsiks meie süsteemidest. Ära laadi üles dokumente, mille välist jagamist sul pole õigust lubada.',
       uploading: 'Lepingu üleslaadimine…', analyzing: 'Lepingu analüüsimine…',
       fetching: 'Küsime 12 kuu tarbimisandmeid allikast {datahub}…',
       k_supplier: 'Tarnija', k_plan: 'Pakett', k_rate: 'Hind', k_type: 'Lepingu tüüp',
@@ -277,6 +279,7 @@
       dash_title: 'Pašreizējais līgums un patēriņš', dash_sub: '1. solis no 3',
       upload_title: 'Ievelc sava līguma PDF šeit vai noklikšķini, lai izvēlētos failu',
       upload_sub: 'Nolasām piegādātāju, plānu, tarifu un derīguma termiņu tieši no dokumenta.',
+      ai_warning: 'Jūsu līgumu šo datu iegūšanai analizē trešās puses AI pakalpojums — dokumenta teksts šai analīzei tiek nosūtīts ārpus mūsu sistēmām. Neaugšupielādējiet dokumentus, kuru ārēju kopīgošanu jums nav tiesību atļaut.',
       uploading: 'Līgums tiek augšupielādēts…', analyzing: 'Līguma analīze…',
       fetching: 'Pieprasām 12 mēnešu patēriņa datus no {datahub}…',
       k_supplier: 'Piegādātājs', k_plan: 'Plāns', k_rate: 'Tarifs', k_type: 'Līguma veids',
@@ -328,6 +331,7 @@
       dash_title: 'Dabartinė sutartis ir suvartojimas', dash_sub: '1 žingsnis iš 3',
       upload_title: 'Nuvilk savo sutarties PDF čia arba spustelėk, kad pasirinktum failą',
       upload_sub: 'Iš dokumento nuskaitome tiekėją, planą, tarifą ir galiojimo pabaigą.',
+      ai_warning: 'Jūsų sutartį šiems duomenims nustatyti analizuoja trečiosios šalies DI paslauga — dokumento tekstas šiai analizei perduodamas už mūsų sistemų ribų. Neįkelkite dokumentų, kurių išorinio bendrinimo neturite teisės leisti.',
       uploading: 'Sutartis įkeliama…', analyzing: 'Sutarties analizė…',
       fetching: 'Prašome 12 mėnesių suvartojimo duomenų iš {datahub}…',
       k_supplier: 'Tiekėjas', k_plan: 'Planas', k_rate: 'Tarifas', k_type: 'Sutarties tipas',
@@ -597,7 +601,9 @@
 
     if (c.uploadStatus === 'idle') {
       card.innerHTML =
-        '<div class="eb-card"><div class="eb-upload" id="upload-zone">' +
+        '<div class="eb-card">' +
+        '<div class="eb-upload-warning">' + t('ai_warning') + '</div>' +
+        '<div class="eb-upload" id="upload-zone">' +
         '<div class="eb-upload-title">' + t('upload_title') + '</div>' +
         '<div class="eb-upload-sub">' + t('upload_sub') + '</div></div></div>';
       ctaWrap.classList.add('eb-hidden');
