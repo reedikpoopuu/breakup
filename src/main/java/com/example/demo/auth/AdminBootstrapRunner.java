@@ -12,17 +12,21 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Reconciles the configured ADMIN identities (Reedik Poopuu, per PM_ANSWERS.txt, plus
- * whoever else {@code app.admin.smartid-identities} lists) to {@link Role#ADMIN} on
- * every boot - creating the row if it doesn't exist yet, promoting it in place if it
- * already exists as {@link Role#USER}. Runs every startup, not just the first, so
- * growing the admin group is "add an identity to the list and restart" and a
- * misconfigured identity doesn't leave a later, correctly configured one unreachable
- * (the previous seed-once-ever behavior could do exactly that). {@code
+ * Reconciles ADMIN status to exactly match the configured identities (Reedik Poopuu,
+ * per PM_ANSWERS.txt, plus whoever else {@code app.admin.smartid-identities} lists) on
+ * every boot, in both directions: creating/promoting a row for every identity in the
+ * list, and demoting any {@link Role#ADMIN} row that is NOT in the list back to {@link
+ * Role#USER}. Runs every startup, not just the first, so growing the admin group is
+ * "add an identity to the list and restart," and - just as importantly - removing one
+ * is "delete it from the list and restart," not "also go edit the database by hand."
+ * Before this demotion step existed, an identity dropped from the list kept whatever
+ * role it already had in the database forever, which meant an offboarded admin or a
+ * compromised admin identity retained full admin API access indefinitely. {@code
  * app.admin.smartid-identities} is operational/secret data supplied via environment
  * variable at deploy time, never hard-coded (ARCH_SPEC.md section 2.2). Until it is
  * set, the app still boots (dev/test with H2), but admin login fails closed, since no
- * ADMIN row exists to match against.
+ * ADMIN row exists to match against - and any admin rows that already existed get
+ * demoted too, since an unset list means "no admins," not "whatever was there before."
  */
 @Component
 public class AdminBootstrapRunner implements CommandLineRunner {
@@ -65,20 +69,21 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         if (adminSmartIdIdentities.isEmpty()) {
             log.warn("app.admin.smartid-identities is not set - no ADMIN account seeded; "
                     + "admin login will fail closed until it is configured.");
-            return;
-        }
-        for (String identity : adminSmartIdIdentities) {
-            if (!IDENTITY_PATTERN.matcher(identity).matches()) {
-                throw new IllegalStateException(
-                        "app.admin.smartid-identities contains '" + identity + "', which is not in "
-                        + "COUNTRY-NATIONALIDNUMBER form (e.g. EE-40504040001). Refusing to start: "
-                        + "seeding it as-is would create an ADMIN row that can never match a real "
-                        + "login, silently locking every admin out.");
+        } else {
+            for (String identity : adminSmartIdIdentities) {
+                if (!IDENTITY_PATTERN.matcher(identity).matches()) {
+                    throw new IllegalStateException(
+                            "app.admin.smartid-identities contains '" + identity + "', which is not in "
+                            + "COUNTRY-NATIONALIDNUMBER form (e.g. EE-40504040001). Refusing to start: "
+                            + "seeding it as-is would create an ADMIN row that can never match a real "
+                            + "login, silently locking every admin out.");
+                }
+            }
+            for (String identity : adminSmartIdIdentities) {
+                reconcile(identity);
             }
         }
-        for (String identity : adminSmartIdIdentities) {
-            reconcile(identity);
-        }
+        demoteAdminsNotInConfiguredList();
     }
 
     private void reconcile(String identity) {
@@ -90,6 +95,16 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             user.promoteToAdmin();
             repository.save(user);
             log.info("Promoted existing account {} to ADMIN", identity);
+        }
+    }
+
+    private void demoteAdminsNotInConfiguredList() {
+        for (AppUser user : repository.findByRole(Role.ADMIN)) {
+            if (!adminSmartIdIdentities.contains(user.getSmartIdIdentity())) {
+                user.demoteFromAdmin();
+                repository.save(user);
+                log.warn("Demoted {} from ADMIN - no longer present in app.admin.smartid-identities", user.getSmartIdIdentity());
+            }
         }
     }
 }

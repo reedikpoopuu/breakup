@@ -68,11 +68,22 @@ public class AdminAuditLogController {
         return sb.toString();
     }
 
+    /** Leading characters Excel/Sheets treat as the start of a formula - see the CSV-injection neutralization below. */
+    private static final String FORMULA_TRIGGER_CHARS = "=+-@\t\r";
+
     private static String csvField(Object value) {
         if (value == null) {
             return "";
         }
-        String s = String.valueOf(value).replace("\"", "\"\"");
-        return "\"" + s + "\"";
+        String s = String.valueOf(value);
+        // CSV/formula injection: requestDetail carries the uploaded file's own filename,
+        // and responseSummary carries AI output - both are attacker-influenceable text
+        // that ends up in a file admins may open in Excel/Sheets to hand to an authority.
+        // Quoting alone doesn't stop a leading =/+/-/@ from being evaluated as a formula
+        // once the CSV parser strips the quotes, so prefix a defusing apostrophe first.
+        if (!s.isEmpty() && FORMULA_TRIGGER_CHARS.indexOf(s.charAt(0)) >= 0) {
+            s = "'" + s;
+        }
+        return "\"" + s.replace("\"", "\"\"") + "\"";
     }
 }

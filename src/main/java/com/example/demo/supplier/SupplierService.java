@@ -1,6 +1,7 @@
 package com.example.demo.supplier;
 
 import com.example.demo.common.CountryCode;
+import com.example.demo.common.OutboundUrlValidator;
 import com.example.demo.pricing.EnergyPackageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,13 @@ public class SupplierService {
 
     private final SupplierRepository repository;
     private final EnergyPackageRepository energyPackageRepository;
+    private final OutboundUrlValidator outboundUrlValidator;
 
-    public SupplierService(SupplierRepository repository, EnergyPackageRepository energyPackageRepository) {
+    public SupplierService(SupplierRepository repository, EnergyPackageRepository energyPackageRepository,
+                            OutboundUrlValidator outboundUrlValidator) {
         this.repository = repository;
         this.energyPackageRepository = energyPackageRepository;
+        this.outboundUrlValidator = outboundUrlValidator;
     }
 
     @Transactional(readOnly = true)
@@ -39,6 +43,7 @@ public class SupplierService {
         if (repository.existsByCountryAndName(request.country(), request.name())) {
             throw new DuplicateSupplierException(request.country(), request.name());
         }
+        outboundUrlValidator.validate(request.priceUrl());
         Supplier supplier = new Supplier(request.country(), request.name(), request.rfqEmail(), request.priceUrl());
         return repository.save(supplier);
     }
@@ -50,6 +55,7 @@ public class SupplierService {
         if (renaming && repository.existsByCountryAndName(request.country(), request.name())) {
             throw new DuplicateSupplierException(request.country(), request.name());
         }
+        outboundUrlValidator.validate(request.priceUrl());
         supplier.update(request.name(), request.rfqEmail(), request.priceUrl());
         return supplier;
     }

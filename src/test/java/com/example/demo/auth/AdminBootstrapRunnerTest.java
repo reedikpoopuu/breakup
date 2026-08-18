@@ -69,11 +69,39 @@ class AdminBootstrapRunnerTest {
     }
 
     @Test
-    void doesNothingWhenNoIdentityIsConfigured() {
+    void doesNothingWhenNoIdentityIsConfiguredAndNoAdminRowsExist() {
+        when(repository.findByRole(Role.ADMIN)).thenReturn(java.util.List.of());
         var runner = new AdminBootstrapRunner(repository, "", "Admin");
 
         runner.run();
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void demotesAnExistingAdminNoLongerInTheConfiguredList() {
+        AppUser offboarded = new AppUser("EE-99999999999", "Former Admin", Role.ADMIN);
+        AppUser current = new AppUser("EE-40504040001", "Current Admin", Role.ADMIN);
+        when(repository.findBySmartIdIdentity("EE-40504040001")).thenReturn(Optional.of(current));
+        when(repository.findByRole(Role.ADMIN)).thenReturn(java.util.List.of(offboarded, current));
+        var runner = new AdminBootstrapRunner(repository, "EE-40504040001", "Admin");
+
+        runner.run();
+
+        assertThat(offboarded.getRole()).isEqualTo(Role.USER);
+        assertThat(current.getRole()).isEqualTo(Role.ADMIN);
+        verify(repository).save(offboarded);
+    }
+
+    @Test
+    void demotesEveryExistingAdminWhenTheConfiguredListGoesEmpty() {
+        AppUser existingAdmin = new AppUser("EE-40504040001", "Reedik Poopuu", Role.ADMIN);
+        when(repository.findByRole(Role.ADMIN)).thenReturn(java.util.List.of(existingAdmin));
+        var runner = new AdminBootstrapRunner(repository, "", "Admin");
+
+        runner.run();
+
+        assertThat(existingAdmin.getRole()).isEqualTo(Role.USER);
+        verify(repository).save(existingAdmin);
     }
 }

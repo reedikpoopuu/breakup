@@ -1,7 +1,9 @@
 package com.example.demo.pricing.scrape;
 
+import com.example.demo.common.OutboundUrlValidator;
 import com.example.demo.datahub.support.MockHttpEndpoint;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestClient;
 
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,7 +13,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RestClientSupplierPageFetcherTest {
 
-    private final RestClientSupplierPageFetcher fetcher = new RestClientSupplierPageFetcher();
+    // MockHttpEndpoint's baseUrl() is "http://localhost:<port>" - a hostname, not a
+    // literal IP, so the real OutboundUrlValidator doesn't need stubbing here (it never
+    // performs DNS resolution - see that class's javadoc for why).
+    private final RestClientSupplierPageFetcher fetcher = new RestClientSupplierPageFetcher(RestClient.builder(), new OutboundUrlValidator());
 
     @Test
     void fetchesTheResponseBodyWithABrowserUserAgent() {
@@ -29,6 +34,12 @@ class RestClientSupplierPageFetcherTest {
 
             assertThat(html).contains("hello");
         }
+    }
+
+    @Test
+    void refusesToFetchACloudMetadataStyleLiteralIpTarget() {
+        assertThatThrownBy(() -> fetcher.fetch("http://169.254.169.254/latest/meta-data/"))
+                .isInstanceOf(SupplierPageFetchException.class);
     }
 
     @Test

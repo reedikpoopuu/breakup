@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Free-form pricing/contract-term extraction via whichever {@link AiCompletionClient}
@@ -26,6 +28,16 @@ import java.util.Optional;
  * the call fails, or the model's response isn't parseable, this returns {@link
  * Optional#empty()} and logs a warning - {@link ContractUploadController} still returns
  * the regex fields either way. Nothing here is ever persisted automatically.
+ * <p>
+ * The prompt above asks the model to stick to a fixed shape, but nothing stops a
+ * malicious contract's text from containing a prompt-injection payload ("ignore the
+ * above instructions...") that steers the response - {@code pricePerKwh}/{@code
+ * earlyTerminationPenaltyEur} are typed {@link java.math.BigDecimal}, so Jackson already
+ * rejects non-numeric injection there for free, but the free-form string fields have no
+ * such guarantee. {@link #sanitize} is the actual control: it doesn't trust the model's
+ * adherence to the prompt for {@code contractType} (constrained to the literal enum
+ * shape, anything else becomes null) or for string length (capped, since an unbounded
+ * string here flows straight into the audit log's CSV export).
  */
 @Component
 public class ContractPricingAiExtractor {
@@ -34,6 +46,11 @@ public class ContractPricingAiExtractor {
 
     /** Bounds cost/latency and keeps well under any provider's context window - a contract's pricing terms don't need the whole document. */
     private static final int MAX_CONTRACT_TEXT_CHARS = 12_000;
+
+    private static final Set<String> ALLOWED_CONTRACT_TYPES = Set.of("FIXED", "SPOT");
+    private static final Pattern ISO_DATE = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
+    private static final int MAX_NAME_LENGTH = 200;
+    private static final int MAX_NOTES_LENGTH = 500;
 
     private static final String SYSTEM_PROMPT = """
             You extract structured pricing and contract-term data from an electricity supply \
@@ -74,7 +91,7 @@ public class ContractPricingAiExtractor {
 
         try {
             AiCompletionResponse response = client.get().complete(request);
-            return Optional.of(parse(response.content()));
+            return Optional.of(sanitize(parse(response.content())));
         } catch (Exception e) {
             log.warn("AI pricing extraction failed, falling back to regex-only fields", e);
             return Optional.empty();
@@ -84,6 +101,28 @@ public class ContractPricingAiExtractor {
     private AiExtractedPricingFields parse(String rawContent) throws JsonProcessingException {
         String json = stripMarkdownFence(rawContent.trim());
         return objectMapper.readValue(json, AiExtractedPricingFields.class);
+    }
+
+    private static AiExtractedPricingFields sanitize(AiExtractedPricingFields raw) {
+        String contractType = raw.contractType() != null && ALLOWED_CONTRACT_TYPES.contains(raw.contractType())
+                ? raw.contractType() : null;
+        String expiryDate = raw.expiryDate() != null && ISO_DATE.matcher(raw.expiryDate()).matches()
+                ? raw.expiryDate() : null;
+        return new AiExtractedPricingFields(
+                truncate(raw.supplierName(), MAX_NAME_LENGTH),
+                truncate(raw.planName(), MAX_NAME_LENGTH),
+                raw.pricePerKwh(),
+                contractType,
+                expiryDate,
+                raw.earlyTerminationPenaltyEur(),
+                truncate(raw.extractionNotes(), MAX_NOTES_LENGTH));
+    }
+
+    private static String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 
     private static String stripMarkdownFence(String content) {

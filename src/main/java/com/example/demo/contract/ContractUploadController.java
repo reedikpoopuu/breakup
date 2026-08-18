@@ -28,18 +28,27 @@ public class ContractUploadController {
     private final ContractFieldExtractor fieldExtractor;
     private final ContractPricingAiExtractor pricingAiExtractor;
     private final AuditLogService auditLogService;
+    private final ContractParseRateLimiter rateLimiter;
 
     public ContractUploadController(ContractPdfTextExtractor textExtractor, ContractFieldExtractor fieldExtractor,
-                                     ContractPricingAiExtractor pricingAiExtractor, AuditLogService auditLogService) {
+                                     ContractPricingAiExtractor pricingAiExtractor, AuditLogService auditLogService,
+                                     ContractParseRateLimiter rateLimiter) {
         this.textExtractor = textExtractor;
         this.fieldExtractor = fieldExtractor;
         this.pricingAiExtractor = pricingAiExtractor;
         this.auditLogService = auditLogService;
+        this.rateLimiter = rateLimiter;
     }
 
     @PostMapping("/parse")
     public ExtractedContractFields parse(@RequestParam("file") MultipartFile file,
                                           @AuthenticationPrincipal TokenService.Principal actor) {
+        String rateLimitKey = actor != null ? actor.smartIdIdentity() : "unknown";
+        if (!rateLimiter.tryAcquire(rateLimitKey)) {
+            auditLogService.recordWithJsonResponse(AuditActionType.CONTRACT_PARSE, actor, null,
+                    "(rate limited before file was read)", null, false, "Too many contract uploads");
+            throw new TooManyContractUploadsException();
+        }
         String requestDetail = file.getOriginalFilename() + " (" + file.getSize() + " bytes)";
         try {
             if (file.isEmpty()) {

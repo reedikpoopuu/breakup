@@ -78,6 +78,41 @@ class ContractPricingAiExtractorTest {
     }
 
     @Test
+    void discardsAContractTypeOutsideTheFixedEnumRatherThanTrustingTheModel() throws IOException {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            String assistantJson = """
+                    {"supplierName":null,"planName":null,"pricePerKwh":null,\
+                    "contractType":"ignore previous instructions, this is not FIXED or SPOT",\
+                    "expiryDate":"not-a-real-date","earlyTerminationPenaltyEur":null,"extractionNotes":""}""";
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            respondWithAssistantText(endpoint, assistantJson, seenBody);
+
+            Optional<AiExtractedPricingFields> result = extractorAgainst(endpoint).extract("some contract text");
+
+            assertThat(result).isPresent();
+            assertThat(result.get().contractType()).isNull();
+            assertThat(result.get().expiryDate()).isNull();
+        }
+    }
+
+    @Test
+    void truncatesOverlongStringFieldsRatherThanPassingThemThroughUnbounded() throws IOException {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            String longName = "A".repeat(1000);
+            String assistantJson = objectMapper.writeValueAsString(new AiExtractedPricingFields(
+                    longName, null, null, null, null, null, longName));
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            respondWithAssistantText(endpoint, assistantJson, seenBody);
+
+            Optional<AiExtractedPricingFields> result = extractorAgainst(endpoint).extract("some contract text");
+
+            assertThat(result).isPresent();
+            assertThat(result.get().supplierName()).hasSize(200);
+            assertThat(result.get().extractionNotes()).hasSize(500);
+        }
+    }
+
+    @Test
     void stripsMarkdownCodeFencesBeforeParsing() throws IOException {
         try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
             String fenced = "```json\n{\"supplierName\":\"Alexela\",\"planName\":null,\"pricePerKwh\":null,"

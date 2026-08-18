@@ -230,7 +230,10 @@
   const TOKEN_KEY = 'admin_api_token';
 
   // ---------- token / auth ----------
-  function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+  // sessionStorage, not localStorage: this is the highest-privilege token in the app
+  // (ROLE_ADMIN), so it shouldn't outlive the browser tab it was issued in - localStorage
+  // persists indefinitely across restarts, which is a bigger blast radius for no benefit.
+  function getToken() { return sessionStorage.getItem(TOKEN_KEY) || ''; }
   function authHeaders() { const tk = getToken(); return tk ? { Authorization: 'Bearer ' + tk } : {}; }
 
   function refreshTokenDot() {
@@ -298,14 +301,14 @@
   });
   document.getElementById('token-save').addEventListener('click', () => {
     const v = document.getElementById('token-input').value.trim();
-    if (v) localStorage.setItem(TOKEN_KEY, v);
+    if (v) sessionStorage.setItem(TOKEN_KEY, v);
     refreshTokenDot(); refreshSmartIdLoginDot();
     popover.classList.add('eb-hidden');
     toast('Admin API token saved');
     loadSuppliers(); loadPackages();
   });
   document.getElementById('token-clear').addEventListener('click', () => {
-    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
     document.getElementById('token-input').value = '';
     refreshTokenDot(); refreshSmartIdLoginDot();
     toast('Admin API token cleared');
@@ -357,7 +360,7 @@
       return;
     }
     if (poll.status === 'COMPLETE' && poll.token) {
-      localStorage.setItem(TOKEN_KEY, poll.token);
+      sessionStorage.setItem(TOKEN_KEY, poll.token);
       refreshTokenDot(); refreshSmartIdLoginDot();
       closeModal();
       toast('Logged in as ' + poll.displayName + ' (' + poll.role + ') — Save / Run Scraper unlocked');
