@@ -10,6 +10,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -231,9 +232,19 @@ public class StepClient implements DataHubClient {
     // Namespace-aware is required for getElementsByTagNameNS (used when parsing responses) to
     // match anything at all - DocumentBuilderFactory defaults to namespace-UNaware, under which
     // getElementsByTagNameNS silently returns zero results regardless of the wildcard used.
-    private static DocumentBuilderFactory newDocumentBuilderFactory() {
+    //
+    // This same factory also parses inbound XML from the external STEP DataHub
+    // (parseGetObjectConsumptionResponse, extractLoginToken) - a compromised, spoofed, or
+    // MITM'd response could otherwise carry an XXE payload (local file disclosure, internal
+    // SSRF via an entity URL, entity-expansion DoS), since Java resolves external entities
+    // and processes DOCTYPEs by default. SOAP responses from STEP have no legitimate use for
+    // a DOCTYPE, so disallowing it outright costs nothing functionally.
+    private static DocumentBuilderFactory newDocumentBuilderFactory() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         return factory;
     }
 

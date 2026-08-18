@@ -51,4 +51,20 @@ class ContractPdfTextExtractorTest {
         assertThatThrownBy(() -> extractor.extractText(notAPdf))
                 .isInstanceOf(ContractPdfUnreadableException.class);
     }
+
+    @Test
+    void refusesAPdfOverThePageLimit() throws IOException {
+        try (PDDocument document = new PDDocument()) {
+            for (int i = 0; i < 101; i++) {
+                document.addPage(new PDPage());
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.save(out);
+
+            assertThatThrownBy(() -> extractor.extractText(out.toByteArray()))
+                    .isInstanceOf(ContractPdfUnreadableException.class)
+                    .hasMessageContaining("101")
+                    .hasMessageContaining("page");
+        }
+    }
 }

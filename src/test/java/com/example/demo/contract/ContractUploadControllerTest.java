@@ -113,6 +113,21 @@ class ContractUploadControllerTest {
     }
 
     @Test
+    void rejectsTheSixthUploadWithinAMinuteFromTheSameUser() throws Exception {
+        String auth = userAuthHeader();
+        MockMultipartFile file = new MockMultipartFile("file", "contract.pdf", "application/pdf",
+                pdfContaining("EIC 38ZEE-1000009--Z"));
+
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(multipart("/api/contracts/parse").file(file).header("Authorization", auth))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(multipart("/api/contracts/parse").file(file).header("Authorization", auth))
+                .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
     void successfulUploadIsRecordedInTheAuditLog() throws Exception {
         long before = auditLogRepository.count();
         MockMultipartFile file = new MockMultipartFile("file", "contract.pdf", "application/pdf",

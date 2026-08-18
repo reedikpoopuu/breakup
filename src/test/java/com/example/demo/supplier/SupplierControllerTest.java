@@ -268,6 +268,18 @@ class SupplierControllerTest {
         }
 
         @Test
+        void rejectsAPriceUrlPointingAtTheCloudMetadataAddress() throws Exception {
+            SupplierRequest request = new SupplierRequest(CountryCode.EE, "Ssrf-" + System.nanoTime(),
+                    "a@b.ee", "http://169.254.169.254/latest/meta-data/iam/security-credentials/");
+
+            mockMvc.perform(post("/api/admin/suppliers")
+                            .header("Authorization", adminAuthHeader())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
         void rejectsMissingCountry() throws Exception {
             String requestJson = "{\"name\":\"NoCountry\",\"rfqEmail\":\"a@b.ee\",\"priceUrl\":\"https://a.ee\"}";
 

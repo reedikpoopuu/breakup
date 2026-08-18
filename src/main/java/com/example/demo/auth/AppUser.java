@@ -58,6 +58,10 @@ public class AppUser {
         this.role = Role.ADMIN;
     }
 
+    void demoteFromAdmin() {
+        this.role = Role.USER;
+    }
+
     public Long getId() {
         return id;
     }

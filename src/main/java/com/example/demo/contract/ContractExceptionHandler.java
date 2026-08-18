@@ -17,4 +17,9 @@ public class ContractExceptionHandler {
     public ResponseEntity<String> onBadRequest(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
+
+    @ExceptionHandler(TooManyContractUploadsException.class)
+    public ResponseEntity<String> onRateLimited(TooManyContractUploadsException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage());
+    }
 }

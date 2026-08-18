@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Pure unit coverage of {@link StepClient}'s XML request/response handling, no network. */
 class StepClientXmlTest {
@@ -105,5 +106,29 @@ class StepClientXmlTest {
     void extractLoginTokenReturnsNullWhenNoTokenElementIsPresent() {
         assertThat(StepClient.extractLoginToken("<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body/></soap:Envelope>"))
                 .isNull();
+    }
+
+    @Test
+    void refusesToResolveExternalEntitiesInAnXxePayload() {
+        // A DOCTYPE declaring an external entity that would read /etc/passwd if resolved.
+        // A malicious/spoofed/MITM'd STEP response is untrusted input just like any other -
+        // this must fail closed (no DOCTYPE allowed at all) rather than leak file contents
+        // into the "token" it returns.
+        String xxePayload = """
+                <?xml version="1.0"?>
+                <!DOCTYPE root [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <LoginResponse xmlns="http://step.sadalestikls.lv/stdh">
+                      <token>&xxe;</token>
+                    </LoginResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        assertThat(StepClient.extractLoginToken(xxePayload)).isNull();
+        assertThatThrownBy(() -> StepClient.parseGetObjectConsumptionResponse(xxePayload))
+                .as("parsing must fail rather than silently succeed with a resolved entity")
+                .isInstanceOf(IllegalStateException.class);
     }
 }

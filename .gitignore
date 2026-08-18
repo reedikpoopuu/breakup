@@ -9,6 +9,7 @@ dist/
 build/
 __pycache__/
 *.pyc
+target/
 
 # Local multi-agent script & context files
 team_runner.py
