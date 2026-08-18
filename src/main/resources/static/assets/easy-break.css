@@ -1,33 +1,39 @@
 /* ==========================================================================
    Easy Break design system
-   Warm-amber, OKLCH-derived accent (hue 70) on a near-white neutral base.
+   EXPERIMENTAL REDESIGN — editorial/minimal direction inspired by
+   isabelmoranta.com (see the conversation that produced this branch):
+   near-monochrome base, generous letter-spacing on display type, low visual
+   density, the warm accent pulled back to a single deliberate note rather
+   than a fill used everywhere. On its own branch specifically so it can be
+   discarded with zero trace by just not merging it — see git log for the
+   original token values if this doesn't earn its keep.
    Shared by index.html (customer flow) and admin.html (control room) so
    both surfaces speak the same visual language.
    ========================================================================== */
 
 :root {
   --hue: 70;
-  --accent: oklch(58% 0.15 var(--hue));
-  --accent-hover: oklch(52% 0.16 var(--hue));
-  --accent-active: oklch(46% 0.16 var(--hue));
-  --accent-bg: oklch(94% 0.03 var(--hue));
-  --accent-bg-strong: oklch(90% 0.05 var(--hue));
-  --accent-text: oklch(42% 0.13 var(--hue));
-  --accent-text-strong: oklch(32% 0.12 var(--hue));
-  --accent-border: oklch(80% 0.08 var(--hue));
-  --accent-on: oklch(99% 0.01 var(--hue));
+  --accent: oklch(48% 0.13 var(--hue));
+  --accent-hover: oklch(42% 0.14 var(--hue));
+  --accent-active: oklch(36% 0.14 var(--hue));
+  --accent-bg: oklch(97% 0.012 var(--hue));
+  --accent-bg-strong: oklch(93% 0.025 var(--hue));
+  --accent-text: oklch(38% 0.12 var(--hue));
+  --accent-text-strong: oklch(28% 0.1 var(--hue));
+  --accent-border: oklch(82% 0.03 var(--hue));
+  --accent-on: oklch(99% 0.002 var(--hue));
 
-  --gray-25: oklch(98% 0.006 80);
-  --gray-50: oklch(97% 0.006 80);
-  --gray-100: oklch(95% 0.008 80);
-  --gray-200: oklch(90% 0.006 80);
-  --gray-300: oklch(84% 0.01 80);
-  --gray-400: oklch(70% 0.012 80);
-  --gray-500: oklch(58% 0.014 80);
-  --gray-600: oklch(46% 0.016 80);
-  --gray-700: oklch(36% 0.016 80);
-  --gray-800: oklch(26% 0.014 80);
-  --gray-900: oklch(16% 0.01 80);
+  --gray-25: oklch(99% 0.001 80);
+  --gray-50: oklch(98% 0.001 80);
+  --gray-100: oklch(95% 0.002 80);
+  --gray-200: oklch(90% 0.002 80);
+  --gray-300: oklch(82% 0.003 80);
+  --gray-400: oklch(66% 0.004 80);
+  --gray-500: oklch(52% 0.004 80);
+  --gray-600: oklch(40% 0.004 80);
+  --gray-700: oklch(30% 0.004 80);
+  --gray-800: oklch(20% 0.003 80);
+  --gray-900: oklch(11% 0.002 80);
 
   --success: oklch(45% 0.14 145);
   --success-text: oklch(38% 0.13 145);
@@ -40,16 +46,20 @@
   --danger-border: oklch(80% 0.1 35);
 
   --border: var(--gray-200);
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-btn: 10px;
-  --radius-card: 12px;
+  /* Sharper, more architectural than the original friendly-rounded scale -
+     editorial/luxury references lean crisp corners over soft pill shapes. */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-btn: 3px;
+  --radius-card: 4px;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --shadow-card: 0 1px 2px oklch(20% 0.01 80 / 4%), 0 1px 6px oklch(20% 0.01 80 / 5%);
-  --shadow-modal: 0 20px 60px oklch(20% 0.02 80 / 22%);
+  /* Flatter than the original - editorial layouts tend to separate content with
+     hairline borders and whitespace rather than drop shadows. */
+  --shadow-card: 0 1px 2px oklch(20% 0.002 80 / 3%);
+  --shadow-modal: 0 20px 60px oklch(20% 0.002 80 / 18%);
 }
 
 * { box-sizing: border-box; }
@@ -64,18 +74,19 @@ body {
   font-family: var(--font-sans);
   color: var(--gray-800);
   font-size: 14px;
-  line-height: 1.5;
-  background-color: oklch(98% 0.006 80);
-  background-image:
-    radial-gradient(60% 50% at 15% 8%, oklch(95% 0.035 145 / 55%), transparent 65%),
-    radial-gradient(55% 45% at 90% 15%, oklch(94% 0.035 200 / 45%), transparent 65%);
-  background-attachment: fixed;
+  line-height: 1.6;
+  /* Flat, near-monochrome ground - the two colored gradient washes read as
+     "chromatic variety" the reference explicitly avoids in favor of stark
+     high-contrast neutrals plus one deliberate accent. */
+  background-color: var(--gray-25);
   min-height: 100vh;
 }
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-h1, h2, h3 { margin: 0; font-weight: 700; color: var(--gray-900); letter-spacing: -0.01em; }
+/* Loosened from the original's tight -0.01em: editorial headings build
+   hierarchy through generous spacing and scale, not dense tracking. */
+h1, h2, h3 { margin: 0; font-weight: 600; color: var(--gray-900); letter-spacing: 0.01em; }
 
 a { color: var(--accent-text); text-decoration: none; }
 a:hover { color: var(--accent-text-strong); }
@@ -99,7 +110,7 @@ a:hover { color: var(--accent-text-strong); }
   position: sticky;
   top: 0;
   z-index: 30;
-  background: oklch(98% 0.006 80 / 88%);
+  background: oklch(99% 0.001 80 / 90%);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -125,7 +136,11 @@ a:hover { color: var(--accent-text-strong); }
   background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--border);
   flex: none;
 }
-.eb-step-label { font-size: 12px; font-weight: 600; color: var(--gray-400); white-space: nowrap; }
+/* Bracketed micro-label, echoing the reference's "( scroll )" / "( play )"
+   navigation markers - a small recurring motif rather than a literal copy. */
+.eb-step-label { font-size: 11px; font-weight: 500; letter-spacing: 0.04em; color: var(--gray-400); white-space: nowrap; }
+.eb-step-label::before { content: '( '; }
+.eb-step-label::after { content: ' )'; }
 .eb-step.is-current .eb-step-num { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
 .eb-step.is-current .eb-step-label { color: var(--gray-900); }
 .eb-step.is-done .eb-step-num { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
@@ -187,38 +202,41 @@ a:hover { color: var(--accent-text-strong); }
 .eb-chip-add:hover { border-color: var(--accent-border); color: var(--accent-text); }
 
 /* ---------- page containers ---------- */
-.eb-page { max-width: 920px; margin: 0 auto; padding: 48px 24px 64px; }
+.eb-page { max-width: 920px; margin: 0 auto; padding: 64px 24px 80px; }
 .eb-page.eb-page-narrow { max-width: 680px; }
 .eb-page.eb-page-wide { max-width: 1040px; }
-.eb-page-title { font-size: 28px; font-weight: 700; }
-.eb-page-sub { margin-top: 4px; font-size: 13px; color: var(--gray-500); }
-.eb-page-head { margin-bottom: 24px; }
+.eb-page-title { font-size: 30px; font-weight: 400; letter-spacing: 0.005em; }
+.eb-page-sub { margin-top: 8px; font-size: 13px; color: var(--gray-500); }
+.eb-page-head { margin-bottom: 36px; }
 
 /* ---------- landing hero ---------- */
-.eb-hero { max-width: 640px; margin: 0 auto; padding: 64px 24px 32px; text-align: center; }
-.eb-hero-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 28px; }
-.eb-hero-logo svg { width: 64px; height: 64px; }
-.eb-hero-logo span { font-size: 30px; font-weight: 800; color: var(--gray-900); }
-.eb-hero h1 { font-size: 44px; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; }
-.eb-hero p.eb-hero-sub { margin-top: 16px; font-size: 14px; color: var(--gray-500); max-width: 480px; margin-left: auto; margin-right: auto; }
-.eb-hero-countries { display: flex; justify-content: center; gap: 8px; margin: 32px 0 24px; }
+.eb-hero { max-width: 640px; margin: 0 auto; padding: 104px 24px 48px; text-align: center; }
+.eb-hero-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 40px; }
+.eb-hero-logo svg { width: 56px; height: 56px; }
+.eb-hero-logo span { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-500); }
+/* The big display move: light weight + wide tracking instead of heavy/tight -
+   scale alone (44px) carries the hierarchy, matching the reference's
+   "visual hierarchy through scale rather than weight variation." */
+.eb-hero h1 { font-size: 46px; font-weight: 300; line-height: 1.2; letter-spacing: -0.005em; }
+.eb-hero p.eb-hero-sub { margin-top: 22px; font-size: 14.5px; line-height: 1.7; color: var(--gray-500); max-width: 460px; margin-left: auto; margin-right: auto; }
+.eb-hero-countries { display: flex; justify-content: center; gap: 8px; margin: 40px 0 28px; }
 
 /* ---------- cards ---------- */
-.eb-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 24px; }
+.eb-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 28px; }
 .eb-card + .eb-card { margin-top: 20px; }
-.eb-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.eb-card-title { font-size: 15px; font-weight: 700; color: var(--gray-900); }
-.eb-card-sub { margin-top: 2px; font-size: 12.5px; color: var(--gray-500); }
+.eb-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.eb-card-title { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; color: var(--gray-900); }
+.eb-card-sub { margin-top: 4px; font-size: 12.5px; line-height: 1.6; color: var(--gray-500); }
 .eb-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
 /* ---------- labels ---------- */
-.eb-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); }
+.eb-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gray-500); }
 
 /* ---------- buttons ---------- */
 .eb-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
-  padding: 10px 18px; border-radius: var(--radius-btn); border: 1px solid transparent;
+  font-family: var(--font-sans); font-size: 12.5px; font-weight: 500; letter-spacing: 0.03em;
+  padding: 11px 20px; border-radius: var(--radius-btn); border: 1px solid transparent;
   cursor: pointer; transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .eb-btn:disabled { opacity: 0.55; cursor: not-allowed; }
