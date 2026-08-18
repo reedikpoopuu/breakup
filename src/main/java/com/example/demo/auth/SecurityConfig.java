@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/smart-id/**").permitAll()
                         .requestMatchers("/api/suppliers", "/api/suppliers/**").permitAll()
                         .requestMatchers("/api/packages", "/api/packages/**").permitAll()
+                        .requestMatchers("/api/switching/**").permitAll()
                         // Second layer independent of spring.h2.console.enabled (see
                         // application.properties): even with the console switched on for
                         // local dev, only a real ROLE_ADMIN session can reach it.
