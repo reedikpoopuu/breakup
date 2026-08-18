@@ -57,7 +57,11 @@
         <p class="eb-hero-sub" id="hero-sub"></p>
         <div class="eb-hero-countries" id="landing-country-picker"></div>
         <button id="landing-cta" class="eb-btn eb-btn-primary" style="padding:12px 28px;font-size:14px"></button>
-        <p style="margin-top:40px"><a href="/admin.html" class="eb-text-sm eb-text-muted">Admin Control Room ↗</a></p>
+        <!-- No "Admin Control Room" link here on purpose - this is the customer-facing
+             landing page, and admins have no reason to be routed here to find it. The
+             admin panel is still reachable directly at /admin.html (unaffected - see
+             SecurityConfig's permitAll for the static page itself, and its own
+             ROLE_ADMIN-gated API calls once loaded), just not advertised to customers. -->
       </div>
     </section>
 
@@ -186,6 +190,7 @@
       k_margin: 'Margin over spot price (EUR/kWh)', k_monthly_fee: 'Monthly fee (EUR)',
       k_termless: 'No fixed end date (continues until cancelled)',
       k_expiry: 'Expires', k_penalty: 'Early-termination penalty', k_earliest: 'Earliest switch date',
+      k_earliest_hint: 'Set by law based on today’s date - not something you or we can choose.',
       ph_supplier: 'e.g. Eesti Energia AS', ph_plan: 'e.g. Fixed 12',
       consumption_title: 'Monthly consumption (kWh)', peak_load: 'Peak load month',
       m_deviation: 'Consumption-pattern deviation', m_deviation_tip: 'How far your monthly usage shape differs from a typical business of your size.',
@@ -245,6 +250,7 @@
       k_margin: 'Marginaal börsihinnale (EUR/kWh)', k_monthly_fee: 'Kuutasu (EUR)',
       k_termless: 'Tähtajatu leping (kehtib kuni ülesütlemiseni)',
       k_expiry: 'Lõppeb', k_penalty: 'Ennetähtaegse lõpetamise leppetrahv', k_earliest: 'Varaseim vahetuse kuupäev',
+      k_earliest_hint: 'Määratud seadusega tänase kuupäeva põhjal - ei ole sinu ega meie valida.',
       ph_supplier: 'nt Eesti Energia AS', ph_plan: 'nt Kindel 12',
       consumption_title: 'Kuine tarbimine (kWh)', peak_load: 'Tipptarbimise kuu',
       m_deviation: 'Tarbimismustri kõrvalekalle', m_deviation_tip: 'Kuivõrd erineb sinu kuine tarbimiskuju sarnase suurusega ettevõtte tüüpilisest kujust.',
@@ -304,6 +310,7 @@
       k_margin: 'Uzcenojums biržas cenai (EUR/kWh)', k_monthly_fee: 'Ikmēneša maksa (EUR)',
       k_termless: 'Bez noteikta termiņa (spēkā līdz izbeigšanai)',
       k_expiry: 'Beidzas', k_penalty: 'Priekšlaicīgas izbeigšanas soda nauda', k_earliest: 'Agrākais maiņas datums',
+      k_earliest_hint: 'Noteikts likumā, balstoties uz šodienas datumu - to nevar izvēlēties ne tu, ne mēs.',
       ph_supplier: 'piem. Latvenergo', ph_plan: 'piem. Fiksētā 24',
       consumption_title: 'Mēneša patēriņš (kWh)', peak_load: 'Maksimālā patēriņa mēnesis',
       m_deviation: 'Patēriņa modeļa novirze', m_deviation_tip: 'Cik ļoti tavs mēneša patēriņa modelis atšķiras no tipiska līdzīga uzņēmuma.',
@@ -363,6 +370,7 @@
       k_margin: 'Antkainis biržos kainai (EUR/kWh)', k_monthly_fee: 'Mėnesinis mokestis (EUR)',
       k_termless: 'Be nustatytos pabaigos datos (galioja iki nutraukimo)',
       k_expiry: 'Galioja iki', k_penalty: 'Išankstinio nutraukimo mokestis', k_earliest: 'Ankstyviausia keitimo data',
+      k_earliest_hint: 'Nustatyta pagal įstatymą, remiantis šiandienos data - to negali pasirinkti nei tu, nei mes.',
       ph_supplier: 'pvz. Ignitis', ph_plan: 'pvz. Standartinis+',
       consumption_title: 'Mėnesinis suvartojimas (kWh)', peak_load: 'Didžiausio suvartojimo mėnuo',
       m_deviation: 'Suvartojimo modelio nuokrypis', m_deviation_tip: 'Kiek tavo mėnesinio suvartojimo forma skiriasi nuo tipinės panašaus dydžio įmonės.',
@@ -634,6 +642,16 @@
       '<input class="eb-input" id="' + id + '" type="' + (type || 'text') + '"' + stepAttr + placeholderAttr + disabledAttr +
       ' value="' + escapeHtml(value == null ? '' : value) + '"></div>';
   }
+  // The earliest switch date is a legal fact computed from today's date and the
+  // company's country (GET /api/switching/earliest-date - see startContractUpload) -
+  // not something the parser found or the customer gets to pick, so unlike every other
+  // confirm-screen field it's never editable. A short hint explains why, so a locked
+  // field with a value already in it doesn't read as broken.
+  function earliestSwitchField(value) {
+    return '<div class="eb-field"><label class="eb-label" for="confirm-earliestswitch">' + t('k_earliest') + '</label>' +
+      '<input class="eb-input" id="confirm-earliestswitch" type="date" disabled value="' + escapeHtml(value == null ? '' : value) + '">' +
+      '<div class="eb-text-sm eb-text-muted eb-mt-8">' + t('k_earliest_hint') + '</div></div>';
+  }
   function typeSelectField(value) {
     const options = ['fixed', 'spot'].map(v =>
       '<option value="' + v + '"' + (v === value ? ' selected' : '') + '>' + t(v === 'fixed' ? 'plan_fixed' : 'plan_spot') + '</option>'
@@ -676,7 +694,7 @@
       // price) - a SPOT contract has no such hedge, so the field is hidden entirely
       // rather than just left blank, mirroring termlessField's fixed/spot split above.
       textField('confirm-penalty', 'k_penalty', d.penalty, 'number', '150', false, 'confirm-penalty-wrap', d.type === 'spot') +
-      textField('confirm-earliestswitch', 'k_earliest', d.earliestSwitch, 'date') +
+      earliestSwitchField(d.earliestSwitch) +
       textField('confirm-registrycode', 'confirm_registry_code', d.registryCode) +
       textField('confirm-eic', 'confirm_eic_code', d.eicCode) +
       '</div>' +
@@ -1266,12 +1284,29 @@
   /* =====================================================================
      Contract upload — real backend call to POST /api/contracts/parse
      ===================================================================== */
+  // The earliest a NEW contract can start has nothing to do with the OLD contract's
+  // expiry date (that was the bug this replaces - see GET /api/switching/earliest-date /
+  // SwitchingWindowCalculator for the actual country-specific switching-window rules).
+  // Degrades to '' (grayed placeholder, same as any other unavailable field) rather than
+  // failing the whole upload if this lookup itself fails.
+  async function fetchEarliestSwitchDate(country) {
+    try {
+      const res = await apiFetch('/api/switching/earliest-date?country=' + encodeURIComponent(country));
+      return (res && res.earliestSwitchDate) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   async function startContractUpload(c, file) {
     c.uploadStatus = 'uploading'; c.uploadError = null; render();
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const result = await apiFetch('/api/contracts/parse', { method: 'POST', body: formData });
+      const [result, earliestSwitch] = await Promise.all([
+        apiFetch('/api/contracts/parse', { method: 'POST', body: formData }),
+        fetchEarliestSwitchDate(c.company.country),
+      ]);
       const pricing = result.pricingFields || {};
       const registryCandidate = (result.registryCodeCandidates && result.registryCodeCandidates[0]) || null;
       const eicCode = (result.eicCodes && result.eicCodes[0]) || c.company.eicCode || '';
@@ -1291,7 +1326,7 @@
         termless: termless,
         endDate: termless ? '' : (pricing.expiryDate || ''),
         penalty: pricing.earlyTerminationPenaltyEur != null ? pricing.earlyTerminationPenaltyEur : '',
-        earliestSwitch: termless ? '' : (pricing.expiryDate || ''),
+        earliestSwitch: earliestSwitch,
         registryCode: registryCandidate ? registryCandidate.code : (c.company.registryCode || ''),
         eicCode: eicCode,
       };
