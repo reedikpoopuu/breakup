@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -60,11 +61,30 @@ public class ContractPricingAiExtractor {
             {
               "supplierName": string or null,
               "planName": string or null,
-              "pricePerKwh": number (EUR per kWh) or null,
+              "pricePerKwh": number or null - for a FIXED contract, the flat price per kWh; \
+            for a SPOT contract, the margin added on top of the live spot price per kWh, NOT a \
+            standalone price. ALWAYS the price excluding VAT/käibemaks/PVN/PVM, even if the \
+            contract only shows the VAT-inclusive figure prominently - if both are shown, use \
+            the excl.-VAT one,
+              "monthlyFeeEur": number or null - a flat monthly fee charged in addition to the \
+            per-kWh price/margin, independent of contract type; null if no such fee is stated. \
+            Also excluding VAT, same rule as pricePerKwh,
               "contractType": "FIXED", "SPOT", or null,
-              "expiryDate": string in ISO yyyy-MM-dd format, or null,
-              "earlyTerminationPenaltyEur": number or null,
-              "extractionNotes": a short string flagging anything unclear or ambiguous, or ""
+              "termless": true only if the contract explicitly has no fixed end date and \
+            continues until cancelled (e.g. Estonian "tähtajatu") AND contractType is "SPOT" - \
+            otherwise false. Never true for a FIXED contract, even if it also reads as \
+            indefinite - v1 does not support that combination,
+              "expiryDate": string in ISO yyyy-MM-dd format, or null - omit/null whenever \
+            termless is true,
+              "earlyTerminationPenaltyEur": number or null - ONLY applicable to a FIXED \
+            contract (the supplier has hedged the fixed price with underlying purchased assets, \
+            which is what the penalty compensates for breaking). A SPOT contract has no such \
+            hedge, so this must always be null for SPOT even if the text mentions some other \
+            kind of exit fee - do not conflate the two. Also excluding VAT,
+              "extractionNotes": a short string flagging anything unclear or ambiguous, or "" - \
+            if the contract is SPOT and the text nonetheless states an early-termination \
+            penalty (unusual), mention it here rather than silently dropping it, since \
+            earlyTerminationPenaltyEur is forced null for SPOT regardless of what you put there
             }
             If a field is not clearly stated in the text, use null rather than guessing - never \
             fabricate a value.""";
@@ -87,7 +107,7 @@ public class ContractPricingAiExtractor {
                 ? contractText.substring(0, MAX_CONTRACT_TEXT_CHARS)
                 : contractText;
         AiCompletionRequest request = new AiCompletionRequest(
-                List.of(AiMessage.system(SYSTEM_PROMPT), AiMessage.user(truncated)), 500, 0.0);
+                List.of(AiMessage.system(SYSTEM_PROMPT), AiMessage.user(truncated)), 600, 0.0);
 
         try {
             AiCompletionResponse response = client.get().complete(request);
@@ -106,15 +126,26 @@ public class ContractPricingAiExtractor {
     private static AiExtractedPricingFields sanitize(AiExtractedPricingFields raw) {
         String contractType = raw.contractType() != null && ALLOWED_CONTRACT_TYPES.contains(raw.contractType())
                 ? raw.contractType() : null;
-        String expiryDate = raw.expiryDate() != null && ISO_DATE.matcher(raw.expiryDate()).matches()
-                ? raw.expiryDate() : null;
+        // termless is only ever trusted for SPOT - v1 has no "no end date" concept for FIXED,
+        // whatever the model claims (see AiExtractedPricingFields' javadoc). And whenever it IS
+        // termless, expiryDate is forced null too: the two are mutually exclusive, and the model
+        // isn't trusted to have enforced that itself.
+        boolean termless = Boolean.TRUE.equals(raw.termless()) && "SPOT".equals(contractType);
+        String expiryDate = termless ? null
+                : raw.expiryDate() != null && ISO_DATE.matcher(raw.expiryDate()).matches() ? raw.expiryDate() : null;
+        // Early-termination penalties compensate the supplier for breaking a hedge bought to
+        // guarantee a fixed price - a SPOT contract has no such hedge, so it can never carry
+        // one here regardless of what the model claims, symmetric to the termless/SPOT rule above.
+        BigDecimal earlyTerminationPenaltyEur = "FIXED".equals(contractType) ? raw.earlyTerminationPenaltyEur() : null;
         return new AiExtractedPricingFields(
                 truncate(raw.supplierName(), MAX_NAME_LENGTH),
                 truncate(raw.planName(), MAX_NAME_LENGTH),
                 raw.pricePerKwh(),
+                raw.monthlyFeeEur(),
                 contractType,
+                termless,
                 expiryDate,
-                raw.earlyTerminationPenaltyEur(),
+                earlyTerminationPenaltyEur,
                 truncate(raw.extractionNotes(), MAX_NOTES_LENGTH));
     }
 

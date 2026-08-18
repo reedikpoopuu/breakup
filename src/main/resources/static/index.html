@@ -182,8 +182,11 @@
       confirm_cancel: 'Cancel', confirm_save: 'Looks right, continue',
       uploading: 'Uploading contract…', analyzing: 'Analyzing contract…',
       fetching: 'Requesting 12 months of consumption data from {datahub}…',
-      k_supplier: 'Supplier', k_plan: 'Plan', k_rate: 'Rate', k_type: 'Contract type',
+      k_supplier: 'Supplier', k_plan: 'Plan', k_rate: 'Price (EUR/kWh)', k_type: 'Contract type',
+      k_margin: 'Margin over spot price (EUR/kWh)', k_monthly_fee: 'Monthly fee (EUR)',
+      k_termless: 'No fixed end date (continues until cancelled)',
       k_expiry: 'Expires', k_penalty: 'Early-termination penalty', k_earliest: 'Earliest switch date',
+      ph_supplier: 'e.g. Eesti Energia AS', ph_plan: 'e.g. Fixed 12',
       consumption_title: 'Monthly consumption (kWh)', peak_load: 'Peak load month',
       m_deviation: 'Consumption-pattern deviation', m_deviation_tip: 'How far your monthly usage shape differs from a typical business of your size.',
       m_volatility: 'Month-to-month volatility', m_volatility_tip: 'How much your usage swings between consecutive months.',
@@ -219,7 +222,7 @@
       modal_start: 'Start Smart-ID', modal_confirm_hint: 'Confirm this code in your Smart-ID app:',
       modal_waiting: 'Waiting for confirmation…', modal_cancel: 'Cancel',
       modal_success: 'Identity confirmed', modal_done: 'Done',
-      plan_fixed: 'Fixed', plan_spot: 'Spot + margin',
+      plan_fixed: 'Fixed', plan_spot: 'Spot',
     },
     et: {
       nav1: 'Leping ja tarbimine', nav2: 'Hinnapäringud', nav3: 'Vaheta ja allkirjasta',
@@ -238,8 +241,11 @@
       confirm_cancel: 'Loobu', confirm_save: 'Vastab tõele, jätka',
       uploading: 'Lepingu üleslaadimine…', analyzing: 'Lepingu analüüsimine…',
       fetching: 'Küsime 12 kuu tarbimisandmeid allikast {datahub}…',
-      k_supplier: 'Tarnija', k_plan: 'Pakett', k_rate: 'Hind', k_type: 'Lepingu tüüp',
+      k_supplier: 'Tarnija', k_plan: 'Pakett', k_rate: 'Hind (EUR/kWh)', k_type: 'Lepingu tüüp',
+      k_margin: 'Marginaal börsihinnale (EUR/kWh)', k_monthly_fee: 'Kuutasu (EUR)',
+      k_termless: 'Tähtajatu leping (kehtib kuni ülesütlemiseni)',
       k_expiry: 'Lõppeb', k_penalty: 'Ennetähtaegse lõpetamise leppetrahv', k_earliest: 'Varaseim vahetuse kuupäev',
+      ph_supplier: 'nt Eesti Energia AS', ph_plan: 'nt Kindel 12',
       consumption_title: 'Kuine tarbimine (kWh)', peak_load: 'Tipptarbimise kuu',
       m_deviation: 'Tarbimismustri kõrvalekalle', m_deviation_tip: 'Kuivõrd erineb sinu kuine tarbimiskuju sarnase suurusega ettevõtte tüüpilisest kujust.',
       m_volatility: 'Kuudevaheline kõikumine', m_volatility_tip: 'Kui palju kõigub tarbimine kuude vahel.',
@@ -275,7 +281,7 @@
       modal_start: 'Alusta Smart-ID-ga', modal_confirm_hint: 'Kinnita see kood oma Smart-ID rakenduses:',
       modal_waiting: 'Ootan kinnitust…', modal_cancel: 'Loobu',
       modal_success: 'Identiteet kinnitatud', modal_done: 'Valmis',
-      plan_fixed: 'Fikseeritud', plan_spot: 'Börsihind + marginaal',
+      plan_fixed: 'Fikseeritud', plan_spot: 'Börsihind',
     },
     lv: {
       nav1: 'Līgums un patēriņš', nav2: 'Cenu pieprasījumi', nav3: 'Mainīt un parakstīt',
@@ -294,8 +300,11 @@
       confirm_cancel: 'Atcelt', confirm_save: 'Izskatās pareizi, turpināt',
       uploading: 'Līgums tiek augšupielādēts…', analyzing: 'Līguma analīze…',
       fetching: 'Pieprasām 12 mēnešu patēriņa datus no {datahub}…',
-      k_supplier: 'Piegādātājs', k_plan: 'Plāns', k_rate: 'Tarifs', k_type: 'Līguma veids',
+      k_supplier: 'Piegādātājs', k_plan: 'Plāns', k_rate: 'Cena (EUR/kWh)', k_type: 'Līguma veids',
+      k_margin: 'Uzcenojums biržas cenai (EUR/kWh)', k_monthly_fee: 'Ikmēneša maksa (EUR)',
+      k_termless: 'Bez noteikta termiņa (spēkā līdz izbeigšanai)',
       k_expiry: 'Beidzas', k_penalty: 'Priekšlaicīgas izbeigšanas soda nauda', k_earliest: 'Agrākais maiņas datums',
+      ph_supplier: 'piem. Latvenergo', ph_plan: 'piem. Fiksētā 24',
       consumption_title: 'Mēneša patēriņš (kWh)', peak_load: 'Maksimālā patēriņa mēnesis',
       m_deviation: 'Patēriņa modeļa novirze', m_deviation_tip: 'Cik ļoti tavs mēneša patēriņa modelis atšķiras no tipiska līdzīga uzņēmuma.',
       m_volatility: 'Mēnešu svārstīgums', m_volatility_tip: 'Cik ļoti patēriņš svārstās starp mēnešiem.',
@@ -331,7 +340,7 @@
       modal_start: 'Sākt ar Smart-ID', modal_confirm_hint: 'Apstiprini šo kodu savā Smart-ID lietotnē:',
       modal_waiting: 'Gaidām apstiprinājumu…', modal_cancel: 'Atcelt',
       modal_success: 'Identitāte apstiprināta', modal_done: 'Gatavs',
-      plan_fixed: 'Fiksēts', plan_spot: 'Birža + uzcenojums',
+      plan_fixed: 'Fiksēts', plan_spot: 'Birža',
     },
     lt: {
       nav1: 'Sutartis ir suvartojimas', nav2: 'Kainų užklausos', nav3: 'Keisti ir pasirašyti',
@@ -350,8 +359,11 @@
       confirm_cancel: 'Atšaukti', confirm_save: 'Atrodo teisingai, tęsti',
       uploading: 'Sutartis įkeliama…', analyzing: 'Sutarties analizė…',
       fetching: 'Prašome 12 mėnesių suvartojimo duomenų iš {datahub}…',
-      k_supplier: 'Tiekėjas', k_plan: 'Planas', k_rate: 'Tarifas', k_type: 'Sutarties tipas',
+      k_supplier: 'Tiekėjas', k_plan: 'Planas', k_rate: 'Kaina (EUR/kWh)', k_type: 'Sutarties tipas',
+      k_margin: 'Antkainis biržos kainai (EUR/kWh)', k_monthly_fee: 'Mėnesinis mokestis (EUR)',
+      k_termless: 'Be nustatytos pabaigos datos (galioja iki nutraukimo)',
       k_expiry: 'Galioja iki', k_penalty: 'Išankstinio nutraukimo mokestis', k_earliest: 'Ankstyviausia keitimo data',
+      ph_supplier: 'pvz. Ignitis', ph_plan: 'pvz. Standartinis+',
       consumption_title: 'Mėnesinis suvartojimas (kWh)', peak_load: 'Didžiausio suvartojimo mėnuo',
       m_deviation: 'Suvartojimo modelio nuokrypis', m_deviation_tip: 'Kiek tavo mėnesinio suvartojimo forma skiriasi nuo tipinės panašaus dydžio įmonės.',
       m_volatility: 'Kintamumas tarp mėnesių', m_volatility_tip: 'Kiek suvartojimas svyruoja tarp gretimų mėnesių.',
@@ -387,7 +399,7 @@
       modal_start: 'Pradėti su Smart-ID', modal_confirm_hint: 'Patvirtink šį kodą savo Smart-ID programėlėje:',
       modal_waiting: 'Laukiama patvirtinimo…', modal_cancel: 'Atšaukti',
       modal_success: 'Tapatybė patvirtinta', modal_done: 'Atlikta',
-      plan_fixed: 'Fiksuota', plan_spot: 'Birža + antkainis',
+      plan_fixed: 'Fiksuota', plan_spot: 'Birža',
     },
   };
   function t(key, vars) {
@@ -608,10 +620,19 @@
   /* =====================================================================
      Render: contract-parse confirmation / edit-in-place form
      ===================================================================== */
-  function textField(id, labelKey, value, type) {
+  // placeholderKey/disabled are opt-in: a field with nothing parsed shows a grayed
+  // example (native <input placeholder>, already styled via .eb-input::placeholder)
+  // rather than a real-looking fallback value - see startContractUpload, which leaves
+  // d.* genuinely empty instead of substituting old currentContract data.
+  function textField(id, labelKey, value, type, placeholder, disabled, wrapId, wrapHidden) {
     const stepAttr = type === 'number' ? ' step="0.001"' : '';
-    return '<div class="eb-field"><label class="eb-label" for="' + id + '">' + t(labelKey) + '</label>' +
-      '<input class="eb-input" id="' + id + '" type="' + (type || 'text') + '"' + stepAttr + ' value="' + escapeHtml(value == null ? '' : value) + '"></div>';
+    const placeholderAttr = placeholder ? ' placeholder="' + escapeHtml(placeholder) + '"' : '';
+    const disabledAttr = disabled ? ' disabled' : '';
+    const wrapIdAttr = wrapId ? ' id="' + wrapId + '"' : '';
+    const wrapStyleAttr = wrapHidden ? ' style="display:none"' : '';
+    return '<div class="eb-field"' + wrapIdAttr + wrapStyleAttr + '><label class="eb-label" for="' + id + '">' + t(labelKey) + '</label>' +
+      '<input class="eb-input" id="' + id + '" type="' + (type || 'text') + '"' + stepAttr + placeholderAttr + disabledAttr +
+      ' value="' + escapeHtml(value == null ? '' : value) + '"></div>';
   }
   function typeSelectField(value) {
     const options = ['fixed', 'spot'].map(v =>
@@ -620,10 +641,22 @@
     return '<div class="eb-field"><label class="eb-label" for="confirm-type">' + t('k_type') + '</label>' +
       '<select class="eb-select" id="confirm-type">' + options + '</select></div>';
   }
+  // Termless ("no fixed end date") only applies to spot contracts - see the product
+  // decision recorded in the conversation that added this: fixed contracts always have
+  // a defined end date in v1. Hidden entirely for a fixed contract rather than shown
+  // disabled, so there's nothing to misread as "fixed contracts can be termless too."
+  function termlessField(type, termless) {
+    return '<div class="eb-field" id="confirm-termless-wrap" style="' + (type === 'spot' ? '' : 'display:none') + '">' +
+      '<label class="eb-label">' + t('k_termless') + '</label>' +
+      '<button type="button" class="eb-switch' + (termless ? ' is-on' : '') + '" id="confirm-termless-toggle" role="switch" aria-checked="' + (termless ? 'true' : 'false') + '"></button>' +
+      '</div>';
+  }
 
   function renderConfirmCard(c) {
     const d = c.draft;
     const aiUnavailable = !c.parsedFields || !c.parsedFields.pricingFields;
+    const rateLabelKey = d.type === 'spot' ? 'k_margin' : 'k_rate';
+    const ratePlaceholder = d.type === 'spot' ? '0.003' : '0.150';
     return '<div class="eb-card">' +
       '<div class="eb-card-head"><div>' +
       '<div class="eb-card-title">' + t('confirm_title') + '</div>' +
@@ -631,12 +664,18 @@
       '</div></div>' +
       (aiUnavailable ? '<div class="eb-banner eb-banner-accent">' + t('confirm_manual_notice') + '</div>' : '') +
       '<div class="eb-field-grid">' +
-      textField('confirm-supplier', 'k_supplier', d.supplier) +
-      textField('confirm-plan', 'k_plan', d.plan) +
-      textField('confirm-rate', 'k_rate', d.rate, 'number') +
+      textField('confirm-supplier', 'k_supplier', d.supplier, null, t('ph_supplier')) +
+      textField('confirm-plan', 'k_plan', d.plan, null, t('ph_plan')) +
+      textField('confirm-rate', rateLabelKey, d.rate, 'number', ratePlaceholder) +
       typeSelectField(d.type) +
-      textField('confirm-enddate', 'k_expiry', d.endDate, 'date') +
-      textField('confirm-penalty', 'k_penalty', d.penalty, 'number') +
+      textField('confirm-monthlyfee', 'k_monthly_fee', d.monthlyFee, 'number', '5.00') +
+      termlessField(d.type, d.termless) +
+      textField('confirm-enddate', 'k_expiry', d.endDate, 'date', null, d.termless) +
+      // Early-termination penalties only make sense for a FIXED contract (they
+      // compensate the supplier for breaking a hedge bought to guarantee the fixed
+      // price) - a SPOT contract has no such hedge, so the field is hidden entirely
+      // rather than just left blank, mirroring termlessField's fixed/spot split above.
+      textField('confirm-penalty', 'k_penalty', d.penalty, 'number', '150', false, 'confirm-penalty-wrap', d.type === 'spot') +
       textField('confirm-earliestswitch', 'k_earliest', d.earliestSwitch, 'date') +
       textField('confirm-registrycode', 'confirm_registry_code', d.registryCode) +
       textField('confirm-eic', 'confirm_eic_code', d.eicCode) +
@@ -1122,13 +1161,19 @@
 
     if (el.id === 'confirm-save-btn') {
       const c = activeCompany(); if (!c) return;
+      const type = document.getElementById('confirm-type').value;
+      const termlessToggle = document.getElementById('confirm-termless-toggle');
+      const termless = type === 'spot' && !!termlessToggle && termlessToggle.classList.contains('is-on');
       c.currentContract = {
         supplier: document.getElementById('confirm-supplier').value.trim(),
         plan: document.getElementById('confirm-plan').value.trim(),
         rate: parseFloat(document.getElementById('confirm-rate').value) || 0,
-        type: document.getElementById('confirm-type').value,
-        endDate: document.getElementById('confirm-enddate').value,
-        penalty: parseFloat(document.getElementById('confirm-penalty').value) || 0,
+        monthlyFee: parseFloat(document.getElementById('confirm-monthlyfee').value) || 0,
+        type: type,
+        termless: termless,
+        endDate: termless ? '' : document.getElementById('confirm-enddate').value,
+        // Never a real value for spot - see confirm-penalty-wrap's render comment.
+        penalty: type === 'spot' ? 0 : parseFloat(document.getElementById('confirm-penalty').value) || 0,
         earliestSwitch: document.getElementById('confirm-earliestswitch').value,
       };
       c.company.registryCode = document.getElementById('confirm-registrycode').value.trim();
@@ -1140,6 +1185,17 @@
         c.consumptionStatus = 'fetching'; render();
         setTimeout(() => { c.consumptionStatus = 'ready'; render(); }, 1500);
       }, 1300);
+      return;
+    }
+
+    if (el.id === 'confirm-termless-toggle') {
+      const isOn = el.classList.toggle('is-on');
+      el.setAttribute('aria-checked', String(isOn));
+      const endDateInput = document.getElementById('confirm-enddate');
+      if (endDateInput) {
+        endDateInput.disabled = isOn;
+        if (isOn) endDateInput.value = '';
+      }
       return;
     }
 
@@ -1220,14 +1276,22 @@
       const registryCandidate = (result.registryCodeCandidates && result.registryCodeCandidates[0]) || null;
       const eicCode = (result.eicCodes && result.eicCodes[0]) || c.company.eicCode || '';
       c.parsedFields = result;
+      // Anything the parser genuinely didn't find stays empty ('' / null) here, never
+      // silently filled from c.currentContract (that's the *previous* contract's data,
+      // seeded demo values for the prototype templates - not this upload's data, and
+      // showing it as if it were a real extracted value is misleading). Empty fields
+      // render with a grayed placeholder example instead - see textField/renderConfirmCard.
+      const termless = pricing.termless === true;
       c.draft = {
-        supplier: pricing.supplierName || c.currentContract.supplier || '',
-        plan: pricing.planName || c.currentContract.plan || '',
-        rate: pricing.pricePerKwh != null ? pricing.pricePerKwh : c.currentContract.rate,
-        type: (pricing.contractType || c.currentContract.type || 'fixed').toLowerCase(),
-        endDate: pricing.expiryDate || c.currentContract.endDate || '',
-        penalty: pricing.earlyTerminationPenaltyEur != null ? pricing.earlyTerminationPenaltyEur : c.currentContract.penalty,
-        earliestSwitch: pricing.expiryDate || c.currentContract.earliestSwitch || '',
+        supplier: pricing.supplierName || '',
+        plan: pricing.planName || '',
+        rate: pricing.pricePerKwh != null ? pricing.pricePerKwh : '',
+        monthlyFee: pricing.monthlyFeeEur != null ? pricing.monthlyFeeEur : '',
+        type: (pricing.contractType || 'fixed').toLowerCase(),
+        termless: termless,
+        endDate: termless ? '' : (pricing.expiryDate || ''),
+        penalty: pricing.earlyTerminationPenaltyEur != null ? pricing.earlyTerminationPenaltyEur : '',
+        earliestSwitch: termless ? '' : (pricing.expiryDate || ''),
         registryCode: registryCandidate ? registryCandidate.code : (c.company.registryCode || ''),
         eicCode: eicCode,
       };
@@ -1244,6 +1308,37 @@
       const file = e.target.files && e.target.files[0];
       const c = activeCompany();
       if (file && c) startContractUpload(c, file);
+    }
+    if (e.target.id === 'confirm-type') {
+      // Termless only applies to spot (see termlessField) - show/hide it live as the
+      // user corrects the contract type, and relabel/re-placeholder the price field
+      // (flat price for fixed vs. margin over spot price for spot) without a full
+      // card re-render, which would otherwise discard any edits already made below it.
+      const isSpot = e.target.value === 'spot';
+      const wrap = document.getElementById('confirm-termless-wrap');
+      if (wrap) wrap.style.display = isSpot ? '' : 'none';
+      if (!isSpot) {
+        const toggle = document.getElementById('confirm-termless-toggle');
+        if (toggle && toggle.classList.contains('is-on')) {
+          toggle.classList.remove('is-on');
+          toggle.setAttribute('aria-checked', 'false');
+          const endDateInput = document.getElementById('confirm-enddate');
+          if (endDateInput) endDateInput.disabled = false;
+        }
+      }
+      const rateLabel = document.querySelector('label[for="confirm-rate"]');
+      const rateInput = document.getElementById('confirm-rate');
+      if (rateLabel) rateLabel.textContent = t(isSpot ? 'k_margin' : 'k_rate');
+      if (rateInput) rateInput.placeholder = isSpot ? '0.003' : '0.150';
+
+      // Early-termination penalty only applies to FIXED (see the comment on
+      // confirm-penalty-wrap's render call) - hide/clear it live the same way.
+      const penaltyWrap = document.getElementById('confirm-penalty-wrap');
+      if (penaltyWrap) penaltyWrap.style.display = isSpot ? 'none' : '';
+      if (isSpot) {
+        const penaltyInput = document.getElementById('confirm-penalty');
+        if (penaltyInput) penaltyInput.value = '';
+      }
     }
   });
   document.body.addEventListener('dragover', (e) => {

@@ -3,6 +3,9 @@
 .idea/
 *.db
 
+# Local developer secrets (API keys etc.) - see application-local.properties.example
+application-local.properties
+
 # Build & dependencies
 node_modules/
 dist/
