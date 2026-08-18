@@ -23,17 +23,27 @@
   --accent-border: oklch(82% 0.03 var(--hue));
   --accent-on: oklch(99% 0.002 var(--hue));
 
-  --gray-25: oklch(99% 0.001 80);
-  --gray-50: oklch(98% 0.001 80);
-  --gray-100: oklch(95% 0.002 80);
-  --gray-200: oklch(90% 0.002 80);
-  --gray-300: oklch(82% 0.003 80);
-  --gray-400: oklch(66% 0.004 80);
-  --gray-500: oklch(52% 0.004 80);
-  --gray-600: oklch(40% 0.004 80);
-  --gray-700: oklch(30% 0.004 80);
-  --gray-800: oklch(20% 0.003 80);
-  --gray-900: oklch(11% 0.002 80);
+  /* Inverted from the light-mode scale: gray-25 (used everywhere as "page
+     background") is now the DARKEST value and gray-900 (used everywhere as
+     "primary text/heading color") is now the LIGHTEST - redefining just this
+     scale flips the whole app to dark without touching any of the ~180 rules
+     that reference these tokens by name. --surface below covers what used to
+     be literal #fff card/input backgrounds, which this scale alone can't reach. */
+  --gray-25: oklch(9% 0.002 80);
+  --gray-50: oklch(12% 0.002 80);
+  --gray-100: oklch(17% 0.003 80);
+  --gray-200: oklch(24% 0.004 80);
+  --gray-300: oklch(34% 0.005 80);
+  --gray-400: oklch(48% 0.006 80);
+  --gray-500: oklch(62% 0.006 80);
+  --gray-600: oklch(74% 0.005 80);
+  --gray-700: oklch(84% 0.004 80);
+  --gray-800: oklch(92% 0.003 80);
+  --gray-900: oklch(97% 0.002 80);
+
+  /* Card/input/pill surfaces - slightly lighter than the page background for
+     subtle elevation, the dark-theme equivalent of the old literal #fff. */
+  --surface: oklch(14% 0.003 80);
 
   --success: oklch(45% 0.14 145);
   --success-text: oklch(38% 0.13 145);
@@ -54,6 +64,7 @@
   --radius-card: 4px;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'Fraunces', Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Flatter than the original - editorial layouts tend to separate content with
@@ -85,8 +96,12 @@ body {
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 /* Loosened from the original's tight -0.01em: editorial headings build
-   hierarchy through generous spacing and scale, not dense tracking. */
-h1, h2, h3 { margin: 0; font-weight: 600; color: var(--gray-900); letter-spacing: 0.01em; }
+   hierarchy through generous spacing and scale, not dense tracking. Serif
+   headings against the sans body text is the other half of that editorial
+   contrast - covers every actual <h1>/<h2>/<h3> (hero tagline, page titles);
+   .eb-card-title/.eb-modal-title get it explicitly below since they're
+   styled <div>/<span> elements, not real heading tags. */
+h1, h2, h3 { margin: 0; font-family: var(--font-serif); font-weight: 500; color: var(--gray-900); letter-spacing: 0.01em; }
 
 a { color: var(--accent-text); text-decoration: none; }
 a:hover { color: var(--accent-text-strong); }
@@ -152,7 +167,7 @@ a:hover { color: var(--accent-text-strong); }
 .eb-pill {
   font-family: var(--font-mono); font-size: 11px; font-weight: 700;
   padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border);
-  background: #fff; color: var(--gray-500); cursor: pointer; letter-spacing: 0.02em;
+  background: var(--surface); color: var(--gray-500); cursor: pointer; letter-spacing: 0.02em;
 }
 .eb-pill:hover { border-color: var(--accent-border); color: var(--gray-700); }
 .eb-pill.is-active { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent-text-strong); }
@@ -160,7 +175,7 @@ a:hover { color: var(--accent-text-strong); }
 .eb-country-pill {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 16px 8px 10px; border-radius: 999px; border: 1px solid var(--border);
-  background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gray-700);
+  background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gray-700);
 }
 .eb-country-pill:hover { border-color: var(--accent-border); }
 .eb-country-pill.is-active { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent-text-strong); }
@@ -188,7 +203,7 @@ a:hover { color: var(--accent-text-strong); }
 .eb-companies { display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 320px; }
 .eb-chip {
   display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
-  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); background: #fff;
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
   cursor: pointer; white-space: nowrap; flex: none;
 }
 .eb-chip.is-active { background: var(--accent-bg); border-color: var(--accent-border); }
@@ -211,9 +226,18 @@ a:hover { color: var(--accent-text-strong); }
 
 /* ---------- landing hero ---------- */
 .eb-hero { max-width: 640px; margin: 0 auto; padding: 104px 24px 48px; text-align: center; }
-.eb-hero-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 40px; }
-.eb-hero-logo svg { width: 56px; height: 56px; }
-.eb-hero-logo span { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-500); }
+.eb-hero-logo { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 40px; }
+/* Oversized and pulled out to the right, bleeding past the hero's own 640px
+   column (and, on wide viewports, past the page edge - the literal "slightly
+   out of the page" ask). Absolutely positioned + pointer-events:none so it's
+   a purely decorative background mark: it never shifts the wordmark's normal
+   centered position and never blocks clicks on anything below it. NOTE: the
+   svg's own fills are hardcoded (#1a1712/#faf9f7/#b16600), not theme tokens,
+   so they don't invert with the rest of the page - worth a look once this is
+   actually previewed, may want the near-black shape swapped for a light one
+   at this size against the new dark background. */
+.eb-hero-logo svg { position: absolute; right: -160px; top: 50%; transform: translateY(-50%); width: 340px; height: 340px; opacity: 0.92; pointer-events: none; z-index: 0; }
+.eb-hero-logo span { position: relative; z-index: 1; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-500); }
 /* The big display move: light weight + wide tracking instead of heavy/tight -
    scale alone (44px) carries the hierarchy, matching the reference's
    "visual hierarchy through scale rather than weight variation." */
@@ -222,10 +246,10 @@ a:hover { color: var(--accent-text-strong); }
 .eb-hero-countries { display: flex; justify-content: center; gap: 8px; margin: 40px 0 28px; }
 
 /* ---------- cards ---------- */
-.eb-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 28px; }
+.eb-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 28px; }
 .eb-card + .eb-card { margin-top: 20px; }
 .eb-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
-.eb-card-title { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; color: var(--gray-900); }
+.eb-card-title { font-family: var(--font-serif); font-size: 16px; font-weight: 500; letter-spacing: 0.01em; color: var(--gray-900); }
 .eb-card-sub { margin-top: 4px; font-size: 12.5px; line-height: 1.6; color: var(--gray-500); }
 .eb-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
@@ -242,7 +266,7 @@ a:hover { color: var(--accent-text-strong); }
 .eb-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .eb-btn-primary { background: var(--accent); color: var(--accent-on); }
 .eb-btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-.eb-btn-secondary { background: #fff; border-color: var(--border); color: var(--gray-700); }
+.eb-btn-secondary { background: var(--surface); border-color: var(--border); color: var(--gray-700); }
 .eb-btn-secondary:hover:not(:disabled) { border-color: var(--accent-border); color: var(--gray-900); }
 .eb-btn-ghost { background: transparent; color: var(--gray-500); padding: 8px 10px; }
 .eb-btn-ghost:hover:not(:disabled) { color: var(--gray-800); }
@@ -305,7 +329,7 @@ a:hover { color: var(--accent-text-strong); }
 .eb-table tbody td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
 .eb-table tbody tr:last-child td { border-bottom: none; }
 .eb-table tbody tr.is-recommended { background: var(--accent-bg); }
-.eb-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-card); background: #fff; }
+.eb-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
 .eb-table-wrap .eb-table thead th:first-child, .eb-table-wrap .eb-table tbody td:first-child { padding-left: 18px; }
 
 /* ---------- toggle-link (view request text) ---------- */
@@ -326,13 +350,13 @@ a:hover { color: var(--accent-text-strong); }
 /* ---------- summary cards (win vs spot) ---------- */
 .eb-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 @media (max-width: 720px) { .eb-summary-grid { grid-template-columns: 1fr; } }
-.eb-summary-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; box-shadow: var(--shadow-card); }
+.eb-summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; box-shadow: var(--shadow-card); }
 .eb-summary-figure { font-family: var(--font-mono); font-size: 26px; font-weight: 700; margin-top: 8px; }
 
 /* ---------- form controls ---------- */
 .eb-input, .eb-select {
   width: 100%; font-size: 13px; font-family: var(--font-sans); color: var(--gray-800);
-  padding: 9px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: #fff;
+  padding: 9px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface);
 }
 .eb-input:focus, .eb-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
 .eb-input::placeholder { color: var(--gray-400); }
@@ -345,16 +369,20 @@ a:hover { color: var(--accent-text-strong); }
 /* ---------- modal ---------- */
 .eb-modal-overlay { position: fixed; inset: 0; z-index: 50; background: oklch(20% 0.01 80 / 45%); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; }
 .eb-modal-overlay.is-open { display: flex; }
-.eb-modal { width: 100%; max-width: 380px; background: #fff; border-radius: var(--radius-card); border: 1px solid var(--border); box-shadow: var(--shadow-modal); padding: 24px; }
+.eb-modal { width: 100%; max-width: 380px; background: var(--surface); border-radius: var(--radius-card); border: 1px solid var(--border); box-shadow: var(--shadow-modal); padding: 24px; }
 .eb-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.eb-modal-title { font-size: 14px; font-weight: 700; }
+.eb-modal-title { font-family: var(--font-serif); font-size: 15px; font-weight: 500; }
 .eb-modal-close { background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 16px; }
 .eb-modal-close:hover { color: var(--gray-700); }
 .eb-pin { font-family: var(--font-mono); font-size: 34px; font-weight: 700; letter-spacing: 0.3em; text-align: center; color: var(--accent-text-strong); margin: 8px 0; }
 .eb-modal-status { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12.5px; color: var(--gray-500); }
 
 /* ---------- toast ---------- */
-.eb-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; background: var(--gray-900); color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; box-shadow: var(--shadow-modal); display: none; }
+/* Was background:gray-900/color:#fff (dark chip, light text) before the
+   inversion - gray-900 is now the LIGHT end of the scale, so the two colors
+   are swapped explicitly here rather than left to resolve wrong: a light
+   chip with dark text, still standing out clearly against the now-dark page. */
+.eb-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; background: var(--gray-900); color: var(--gray-25); padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; box-shadow: var(--shadow-modal); display: none; }
 .eb-toast.is-visible { display: block; animation: eb-toast-in 0.18s ease-out; }
 @keyframes eb-toast-in { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
