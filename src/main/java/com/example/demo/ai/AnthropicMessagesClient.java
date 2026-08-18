@@ -1,5 +1,6 @@
 package com.example.demo.ai;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -37,9 +38,36 @@ public class AnthropicMessagesClient implements AiCompletionClient {
     private record AnthropicMessage(String role, String content) {
     }
 
+    private record ThinkingConfig(String type) {
+        static final ThinkingConfig DISABLED = new ThinkingConfig("disabled");
+    }
+
+    /**
+     * {@code temperature} is {@code @JsonInclude(NON_NULL)}, not merely nullable: some
+     * models (verified against {@code claude-sonnet-5}) reject the request outright if
+     * the field is present at all, even as an explicit JSON {@code null} - "temperature
+     * is deprecated for this model" / "temperature: Input should be a valid number"
+     * respectively. It must be entirely absent from the wire body, so {@link #complete}
+     * never forwards the caller's requested temperature here (see its comment).
+     * <p>
+     * {@code thinking} is always {@link ThinkingConfig#DISABLED} for the same
+     * model-specific reason {@link #complete} drops temperature: verified against
+     * {@code claude-sonnet-5}, which engages extended thinking by default on anything
+     * beyond a trivial prompt, and that thinking shares the same {@code max_tokens}
+     * budget as the actual answer. On a long enough prompt with a modest budget (the
+     * contract-extraction caller uses 500), thinking can consume the entire budget and
+     * leave no room for a {@code text} content block at all - confirmed directly against
+     * the real API, where the same request produced a text block on some calls and only
+     * a thinking block (no text, {@code stop_reason=max_tokens}) on others. Explicitly
+     * disabling thinking (rather than just raising the token budget) made the same
+     * request return a text block reliably across repeated calls - this app has no use
+     * for exposed reasoning traces anyway, only the final structured answer.
+     */
     private record MessagesRequestBody(String model, List<AnthropicMessage> messages,
                                         @JsonProperty("max_tokens") int maxTokens,
-                                        String system, Double temperature) {
+                                        String system,
+                                        @JsonInclude(JsonInclude.Include.NON_NULL) Double temperature,
+                                        ThinkingConfig thinking) {
     }
 
     private record Usage(@JsonProperty("input_tokens") Integer inputTokens,
@@ -81,7 +109,12 @@ public class AnthropicMessagesClient implements AiCompletionClient {
                 .toList();
         int maxTokens = request.maxTokens() != null ? request.maxTokens() : DEFAULT_MAX_TOKENS;
 
-        MessagesRequestBody body = new MessagesRequestBody(properties.getModel(), messages, maxTokens, system, request.temperature());
+        // request.temperature() is deliberately dropped rather than forwarded - see
+        // MessagesRequestBody's javadoc: at least one real model rejects the field
+        // outright regardless of value, so this client can't honor a caller's requested
+        // temperature at all today, only omit it.
+        MessagesRequestBody body = new MessagesRequestBody(
+                properties.getModel(), messages, maxTokens, system, null, ThinkingConfig.DISABLED);
 
         RestClient restClient = restClientBuilder.baseUrl(properties.getBaseUrl()).build();
         MessagesResponseBody response = restClient.post()

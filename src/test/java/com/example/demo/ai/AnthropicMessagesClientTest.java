@@ -102,6 +102,69 @@ class AnthropicMessagesClientTest {
     }
 
     @Test
+    void alwaysDisablesExtendedThinking() throws IOException {
+        // Regression guard: claude-sonnet-5 engages extended thinking by default on
+        // anything beyond a trivial prompt, and thinking shares the same max_tokens
+        // budget as the actual answer - confirmed against the real API to sometimes
+        // consume the entire budget and leave no text content block at all. Disabling
+        // it explicitly is what makes the response reliably contain a text block.
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            endpoint.handle("/v1/messages", exchange -> {
+                try (InputStream is = exchange.getRequestBody()) {
+                    seenBody.set(objectMapper.readTree(is));
+                }
+                byte[] responseBody = """
+                        {"content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":1}}
+                        """.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBody.length);
+                try (var os = exchange.getResponseBody()) {
+                    os.write(responseBody);
+                }
+            });
+
+            AnthropicProperties properties = configuredProperties(endpoint.baseUrl());
+            AnthropicMessagesClient client = new AnthropicMessagesClient(properties, RestClient.builder());
+
+            client.complete(AiCompletionRequest.of(List.of(AiMessage.user("hi"))));
+
+            assertThat(seenBody.get().get("thinking").get("type").asText()).isEqualTo("disabled");
+        }
+    }
+
+    @Test
+    void neverSendsATemperatureFieldEvenWhenTheCallerRequestsOne() throws IOException {
+        // Regression guard: claude-sonnet-5 rejects the request outright if `temperature`
+        // is present at all - "temperature is deprecated for this model" - even as an
+        // explicit JSON null, not just a non-default value (confirmed against the real
+        // API). The field must be entirely absent from the wire body.
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            endpoint.handle("/v1/messages", exchange -> {
+                try (InputStream is = exchange.getRequestBody()) {
+                    seenBody.set(objectMapper.readTree(is));
+                }
+                byte[] responseBody = """
+                        {"content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":1}}
+                        """.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, responseBody.length);
+                try (var os = exchange.getResponseBody()) {
+                    os.write(responseBody);
+                }
+            });
+
+            AnthropicProperties properties = configuredProperties(endpoint.baseUrl());
+            AnthropicMessagesClient client = new AnthropicMessagesClient(properties, RestClient.builder());
+
+            client.complete(new AiCompletionRequest(List.of(AiMessage.user("hi")), 256, 0.0));
+
+            assertThat(seenBody.get().has("temperature")).isFalse();
+        }
+    }
+
+    @Test
     void throwsANotConfiguredExceptionRatherThanCallingOutWhenUnset() {
         AnthropicProperties properties = new AnthropicProperties();
         AnthropicMessagesClient client = new AnthropicMessagesClient(properties, RestClient.builder());

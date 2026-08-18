@@ -1,0 +1,18 @@
+# Copy this file to application-local.properties (gitignored) and fill in real values.
+# Loaded automatically by application.properties via spring.config.import - no env vars,
+# no -D flags, no shell profile edits needed. Just: mvn spring-boot:run
+
+# --- AI contract-extraction provider - pick ONE of the two blocks below ---
+
+# Anthropic Messages API (checked first if both are set - see AiCompletionClientRegistry)
+#app.ai.anthropic.api-key=sk-ant-...
+#app.ai.anthropic.model=claude-sonnet-5
+
+# OpenAI-compatible gateway (OpenRouter, a self-hosted LiteLLM proxy, Azure OpenAI, ...)
+#app.ai.gateway.base-url=https://openrouter.ai/api/v1
+#app.ai.gateway.api-key=...
+#app.ai.gateway.model=...
+
+# --- Other secrets you may want locally, following the same pattern ---
+#app.admin.smartid-identities=EE-38001085718
+#app.auth.token-secret=some-random-string

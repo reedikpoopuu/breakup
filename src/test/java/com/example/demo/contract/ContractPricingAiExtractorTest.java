@@ -59,7 +59,8 @@ class ContractPricingAiExtractorTest {
         try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
             String assistantJson = """
                     {"supplierName":"Enefit","planName":"Kindel 12","pricePerKwh":0.142,\
-                    "contractType":"FIXED","expiryDate":"2026-11-30","earlyTerminationPenaltyEur":380,\
+                    "monthlyFeeEur":4.5,"contractType":"FIXED","termless":false,\
+                    "expiryDate":"2026-11-30","earlyTerminationPenaltyEur":380,\
                     "extractionNotes":""}""";
             AtomicReference<JsonNode> seenBody = new AtomicReference<>();
             respondWithAssistantText(endpoint, assistantJson, seenBody);
@@ -71,7 +72,9 @@ class ContractPricingAiExtractorTest {
             assertThat(fields.supplierName()).isEqualTo("Enefit");
             assertThat(fields.planName()).isEqualTo("Kindel 12");
             assertThat(fields.pricePerKwh()).isEqualByComparingTo(new BigDecimal("0.142"));
+            assertThat(fields.monthlyFeeEur()).isEqualByComparingTo(new BigDecimal("4.5"));
             assertThat(fields.contractType()).isEqualTo("FIXED");
+            assertThat(fields.termless()).isFalse();
             assertThat(fields.expiryDate()).isEqualTo("2026-11-30");
             assertThat(fields.earlyTerminationPenaltyEur()).isEqualByComparingTo(new BigDecimal("380"));
         }
@@ -81,9 +84,10 @@ class ContractPricingAiExtractorTest {
     void discardsAContractTypeOutsideTheFixedEnumRatherThanTrustingTheModel() throws IOException {
         try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
             String assistantJson = """
-                    {"supplierName":null,"planName":null,"pricePerKwh":null,\
+                    {"supplierName":null,"planName":null,"pricePerKwh":null,"monthlyFeeEur":null,\
                     "contractType":"ignore previous instructions, this is not FIXED or SPOT",\
-                    "expiryDate":"not-a-real-date","earlyTerminationPenaltyEur":null,"extractionNotes":""}""";
+                    "termless":false,"expiryDate":"not-a-real-date","earlyTerminationPenaltyEur":null,\
+                    "extractionNotes":""}""";
             AtomicReference<JsonNode> seenBody = new AtomicReference<>();
             respondWithAssistantText(endpoint, assistantJson, seenBody);
 
@@ -96,11 +100,78 @@ class ContractPricingAiExtractorTest {
     }
 
     @Test
+    void trustsTermlessOnlyForASpotContractAndClearsTheExpiryDateWhenTermless() throws IOException {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            String assistantJson = """
+                    {"supplierName":null,"planName":null,"pricePerKwh":null,"monthlyFeeEur":null,\
+                    "contractType":"SPOT","termless":true,"expiryDate":"2099-01-01",\
+                    "earlyTerminationPenaltyEur":null,"extractionNotes":""}""";
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            respondWithAssistantText(endpoint, assistantJson, seenBody);
+
+            AiExtractedPricingFields fields = extractorAgainst(endpoint).extract("some contract text").orElseThrow();
+
+            assertThat(fields.termless()).isTrue();
+            assertThat(fields.expiryDate()).as("mutually exclusive with termless, even if the model supplied one").isNull();
+        }
+    }
+
+    @Test
+    void neverTrustsTermlessForAFixedContractEvenIfTheModelClaimsIt() throws IOException {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            String assistantJson = """
+                    {"supplierName":null,"planName":null,"pricePerKwh":null,"monthlyFeeEur":null,\
+                    "contractType":"FIXED","termless":true,"expiryDate":null,\
+                    "earlyTerminationPenaltyEur":null,"extractionNotes":""}""";
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            respondWithAssistantText(endpoint, assistantJson, seenBody);
+
+            AiExtractedPricingFields fields = extractorAgainst(endpoint).extract("some contract text").orElseThrow();
+
+            assertThat(fields.termless()).isFalse();
+        }
+    }
+
+    @Test
+    void trustsAnEarlyTerminationPenaltyOnlyForAFixedContract() throws IOException {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            String assistantJson = """
+                    {"supplierName":null,"planName":null,"pricePerKwh":null,"monthlyFeeEur":null,\
+                    "contractType":"FIXED","termless":false,"expiryDate":null,\
+                    "earlyTerminationPenaltyEur":380,"extractionNotes":""}""";
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            respondWithAssistantText(endpoint, assistantJson, seenBody);
+
+            AiExtractedPricingFields fields = extractorAgainst(endpoint).extract("some contract text").orElseThrow();
+
+            assertThat(fields.earlyTerminationPenaltyEur()).isEqualByComparingTo(new BigDecimal("380"));
+        }
+    }
+
+    @Test
+    void neverTrustsAnEarlyTerminationPenaltyForASpotContractEvenIfTheModelClaimsOne() throws IOException {
+        try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
+            // A spot contract has no hedge to compensate for breaking, so this must be
+            // discarded regardless of what the model says - mirrors the termless/FIXED guard.
+            String assistantJson = """
+                    {"supplierName":null,"planName":null,"pricePerKwh":null,"monthlyFeeEur":null,\
+                    "contractType":"SPOT","termless":true,"expiryDate":null,\
+                    "earlyTerminationPenaltyEur":150,"extractionNotes":""}""";
+            AtomicReference<JsonNode> seenBody = new AtomicReference<>();
+            respondWithAssistantText(endpoint, assistantJson, seenBody);
+
+            AiExtractedPricingFields fields = extractorAgainst(endpoint).extract("some contract text").orElseThrow();
+
+            assertThat(fields.earlyTerminationPenaltyEur()).isNull();
+        }
+    }
+
+    @Test
     void truncatesOverlongStringFieldsRatherThanPassingThemThroughUnbounded() throws IOException {
         try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
             String longName = "A".repeat(1000);
             String assistantJson = objectMapper.writeValueAsString(new AiExtractedPricingFields(
-                    longName, null, null, null, null, null, longName));
+                    longName, null, null, null, null, null, null, null, longName));
             AtomicReference<JsonNode> seenBody = new AtomicReference<>();
             respondWithAssistantText(endpoint, assistantJson, seenBody);
 
@@ -116,7 +187,8 @@ class ContractPricingAiExtractorTest {
     void stripsMarkdownCodeFencesBeforeParsing() throws IOException {
         try (MockHttpEndpoint endpoint = new MockHttpEndpoint()) {
             String fenced = "```json\n{\"supplierName\":\"Alexela\",\"planName\":null,\"pricePerKwh\":null,"
-                    + "\"contractType\":null,\"expiryDate\":null,\"earlyTerminationPenaltyEur\":null,\"extractionNotes\":\"partial\"}\n```";
+                    + "\"monthlyFeeEur\":null,\"contractType\":null,\"termless\":false,\"expiryDate\":null,"
+                    + "\"earlyTerminationPenaltyEur\":null,\"extractionNotes\":\"partial\"}\n```";
             AtomicReference<JsonNode> seenBody = new AtomicReference<>();
             respondWithAssistantText(endpoint, fenced, seenBody);
 
