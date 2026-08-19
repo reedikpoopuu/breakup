@@ -136,7 +136,14 @@ a:hover { color: var(--accent-text-strong); }
   position: sticky;
   top: 0;
   z-index: 30;
-  background: oklch(99% 0.001 80 / 90%);
+  /* Bug from the dark-theme pass: this was a literal oklch(99%...) - a light
+     value that never went through the --gray-* scale, so it never inverted
+     with the rest of the page and stayed near-white this whole time. That's
+     what made light-colored text (e.g. the current-step label, which uses
+     gray-900 - now the LIGHT end of the scale) unreadable sitting on top of
+     it. Using the token instead of a literal value going forward means this
+     can't drift out of sync with the rest of the theme again. */
+  background: color-mix(in oklch, var(--gray-25) 90%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -149,7 +156,8 @@ a:hover { color: var(--accent-text-strong); }
   gap: 20px;
 }
 .eb-brand { display: flex; align-items: center; gap: 9px; cursor: pointer; }
-.eb-brand svg { width: 30px; height: 30px; flex: none; }
+/* Header logo removed too, same as the hero one from the last iteration. */
+.eb-brand svg { display: none; }
 .eb-brand-word { font-size: 16px; font-weight: 700; color: var(--gray-900); }
 
 /* ---------- stepper (3-step customer journey) ---------- */
@@ -168,7 +176,12 @@ a:hover { color: var(--accent-text-strong); }
 .eb-step-label::before { content: '( '; }
 .eb-step-label::after { content: ' )'; }
 .eb-step.is-current .eb-step-num { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
-.eb-step.is-current .eb-step-label { color: var(--gray-900); }
+/* Was gray-900 (the brightest/whitest point on the scale) - too stark, and
+   unreadable in practice on the topbar while that had its own leftover
+   light-background bug (see .eb-topbar above). Emphasis now comes from
+   weight instead of pushing all the way to white - still clearly "grey
+   family," just the brightest, boldest step in that family. */
+.eb-step.is-current .eb-step-label { color: var(--gray-700); font-weight: 700; }
 .eb-step.is-done .eb-step-num { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
 .eb-step.is-done .eb-step-label { color: var(--gray-600); }
 .eb-step-sep { width: 16px; height: 1px; background: var(--border); flex: none; }
@@ -236,31 +249,32 @@ a:hover { color: var(--accent-text-strong); }
 .eb-page-head { margin-bottom: 36px; }
 
 /* ---------- landing screen: full-bleed photo background ---------- */
-/* Photo converted from the source HEIC (browsers don't render HEIC in
-   background-image/img at all outside Safari on Apple platforms - shipping
-   the original would have just been a broken background for most visitors),
-   resized to 2400px wide and desaturated server-side so it can't fight the
-   "purely grayscale" direction regardless of the original's actual color
-   cast. #screen-landing specifically, not the whole app - this is the
-   customer's landing page only. */
+/* Both photos converted from source HEIC files (browsers don't render HEIC
+   as background-image/img outside Safari on Apple platforms), resized to
+   2400px and desaturated server-side. #screen-landing specifically - this is
+   the customer's landing page only, not the whole app.
+   --landing-photo is set inline by JS on load (a random pick each page load
+   between the two - see the top of index.html's script), via a custom
+   property rather than swapping a whole class, so this rule stays the single
+   source of truth for the gradient/size/position treatment regardless of
+   which photo is showing. The url() below is a static fallback for the
+   (theoretical) case JS never runs.
+   Two different url() resolution rules collide here, easy to get backwards
+   (did once already - see the old fix commit): a url() written IN THIS
+   STYLESHEET resolves relative to the stylesheet's own location
+   (/assets/easy-break.css), so 'landing-bg-clouds.jpg' below means
+   /assets/landing-bg-clouds.jpg. A url() the JS sets on --landing-photo via
+   inline style resolves relative to the PAGE instead (index.html, served
+   from site root), so that code uses "assets/landing-bg-dusk.jpg" - the
+   'assets/' prefix is required there and wrong here. */
 #screen-landing.is-active {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  /* url() in a stylesheet resolves relative to the stylesheet's own location
-     (this file is itself at /assets/easy-break.css), not the page's - so this
-     is 'landing-bg.jpg' (sibling to this file), not 'assets/landing-bg.jpg'
-     (which resolved to the non-existent /assets/assets/landing-bg.jpg and
-     silently failed - the bug behind the photo not appearing at all). */
-  /* Lightened from 72%/86% - the photo itself (a dusk sky with a bright
-     horizon glow) is more of the point now, the scrim's only job is keeping
-     the centered hero text legible over that bright band, not blanketing
-     the whole image. Still slightly darker toward the bottom, where the
-     CTA button sits. */
   background-image:
     linear-gradient(oklch(9% 0.002 80 / 32%), oklch(9% 0.002 80 / 48%)),
-    url('landing-bg.jpg');
+    var(--landing-photo, url('landing-bg-clouds.jpg'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -278,7 +292,8 @@ a:hover { color: var(--accent-text-strong); }
    scale alone (44px) carries the hierarchy, matching the reference's
    "visual hierarchy through scale rather than weight variation." */
 .eb-hero h1 { font-size: 46px; font-weight: 300; line-height: 1.2; letter-spacing: -0.005em; }
-.eb-hero p.eb-hero-sub { margin-top: 22px; font-size: 14.5px; line-height: 1.7; color: var(--gray-500); max-width: 460px; margin-left: auto; margin-right: auto; }
+/* Removed - not legible over the photo background anyway, per this iteration. */
+.eb-hero p.eb-hero-sub { display: none; }
 .eb-hero-countries { display: flex; justify-content: center; gap: 8px; margin: 40px 0 28px; }
 
 /* ---------- cards ---------- */
