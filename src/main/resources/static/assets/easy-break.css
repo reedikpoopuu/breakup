@@ -106,13 +106,6 @@ body {
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-/* Toggled on <body> by setScreen() (index.html) whenever the landing screen
-   is active - it's a single fixed hero, not a scrolling page, so there's
-   nothing to scroll to. Set on both html and body: overflow:hidden on just
-   body doesn't reliably stop the *page* from scrolling in every browser,
-   since html is the actual scrolling box. */
-html.eb-no-scroll, body.eb-no-scroll { overflow: hidden; }
-
 /* Loosened from the original's tight -0.01em: editorial headings build
    hierarchy through generous spacing and scale, not dense tracking. Serif
    headings against the sans body text is the other half of that editorial
@@ -165,10 +158,7 @@ a:hover { color: var(--accent-text-strong); }
 .eb-brand { display: flex; align-items: center; gap: 9px; cursor: pointer; }
 /* Header logo removed too, same as the hero one from the last iteration. */
 .eb-brand svg { display: none; }
-/* Serif italic, lowercase - reads as a cursive-leaning wordmark using the
-   same Fraunces family as the rest of the editorial type system, rather
-   than pulling in a separate script font just for this one word. */
-.eb-brand-word { font-family: var(--font-serif); font-style: italic; font-weight: 500; font-size: 19px; text-transform: lowercase; color: var(--gray-900); }
+.eb-brand-word { font-size: 16px; font-weight: 700; color: var(--gray-900); }
 
 /* ---------- stepper (3-step customer journey) ---------- */
 .eb-stepper { display: flex; align-items: center; gap: 6px; }
@@ -292,11 +282,10 @@ a:hover { color: var(--accent-text-strong); }
 
 /* ---------- landing hero ---------- */
 .eb-hero { max-width: 640px; margin: 0 auto; padding: 48px 24px; text-align: center; }
-/* Logo AND wordmark both removed from the hero now - the grey label text
-   (var(--gray-500), the same muted tone it's always been) has no contrast
-   against a photo background and just reads as illegible. Brand identity
-   still lives in the topbar (.eb-brand-word), which sits on a solid dark
-   bar, not on the photo. */
+/* Logo AND wordmark both removed from the hero - the grey label text
+   (var(--gray-500)) has no contrast against a photo background and just
+   reads as illegible. Brand identity still lives in the topbar
+   (.eb-brand-word), which sits on a solid dark bar, not on the photo. */
 .eb-hero-logo { display: none; }
 /* The big display move: light weight + wide tracking instead of heavy/tight -
    scale alone (44px) carries the hierarchy, matching the reference's
