@@ -166,22 +166,6 @@
 <script>
 (function () {
   /* =====================================================================
-     Landing-page background: random pick between the two converted photos,
-     once per page load. Sets a CSS custom property rather than swapping a
-     class so the gradient/size/position treatment in
-     #screen-landing.is-active (easy-break.css) stays the single source of
-     truth for both photos. Paths here are relative to the PAGE (this file,
-     served from site root), NOT to the stylesheet - see easy-break.css's
-     comment on this same property for the (already-once-gotten-wrong)
-     opposite rule that applies to a url() written inside a CSS file.
-     ===================================================================== */
-  (function pickRandomLandingPhoto() {
-    const photos = ['assets/landing-bg-clouds.jpg', 'assets/landing-bg-dusk.jpg'];
-    const chosen = photos[Math.floor(Math.random() * photos.length)];
-    document.documentElement.style.setProperty('--landing-photo', "url('" + chosen + "')");
-  })();
-
-  /* =====================================================================
      Copy / i18n
      ===================================================================== */
   const T = {

@@ -248,40 +248,8 @@ a:hover { color: var(--accent-text-strong); }
 .eb-page-sub { margin-top: 8px; font-size: 13px; color: var(--gray-500); }
 .eb-page-head { margin-bottom: 36px; }
 
-/* ---------- landing screen: full-bleed photo background ---------- */
-/* Both photos converted from source HEIC files (browsers don't render HEIC
-   as background-image/img outside Safari on Apple platforms), resized to
-   2400px and desaturated server-side. #screen-landing specifically - this is
-   the customer's landing page only, not the whole app.
-   --landing-photo is set inline by JS on load (a random pick each page load
-   between the two - see the top of index.html's script), via a custom
-   property rather than swapping a whole class, so this rule stays the single
-   source of truth for the gradient/size/position treatment regardless of
-   which photo is showing. The url() below is a static fallback for the
-   (theoretical) case JS never runs.
-   Two different url() resolution rules collide here, easy to get backwards
-   (did once already - see the old fix commit): a url() written IN THIS
-   STYLESHEET resolves relative to the stylesheet's own location
-   (/assets/easy-break.css), so 'landing-bg-clouds.jpg' below means
-   /assets/landing-bg-clouds.jpg. A url() the JS sets on --landing-photo via
-   inline style resolves relative to the PAGE instead (index.html, served
-   from site root), so that code uses "assets/landing-bg-dusk.jpg" - the
-   'assets/' prefix is required there and wrong here. */
-#screen-landing.is-active {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-image:
-    linear-gradient(oklch(9% 0.002 80 / 32%), oklch(9% 0.002 80 / 48%)),
-    var(--landing-photo, url('landing-bg-clouds.jpg'));
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
 /* ---------- landing hero ---------- */
-.eb-hero { max-width: 640px; margin: 0 auto; padding: 48px 24px; text-align: center; }
+.eb-hero { max-width: 640px; margin: 0 auto; padding: 104px 24px 48px; text-align: center; }
 /* Logo removed per this iteration - see git history for the oversized/bled
    treatment this replaces if it's ever wanted back. Wordmark text stays for
    brand identity, just without the graphic mark next to it. */
@@ -292,8 +260,6 @@ a:hover { color: var(--accent-text-strong); }
    scale alone (44px) carries the hierarchy, matching the reference's
    "visual hierarchy through scale rather than weight variation." */
 .eb-hero h1 { font-size: 46px; font-weight: 300; line-height: 1.2; letter-spacing: -0.005em; }
-/* Removed - not legible over the photo background anyway, per this iteration. */
-.eb-hero p.eb-hero-sub { display: none; }
 .eb-hero-countries { display: flex; justify-content: center; gap: 8px; margin: 40px 0 28px; }
 
 /* ---------- cards ---------- */
