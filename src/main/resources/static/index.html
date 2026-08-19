@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Easy Break — Dump your expensive contract</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300..600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/easy-break.css">
 </head>
 <body>
@@ -165,6 +165,27 @@
 
 <script>
 (function () {
+  /* =====================================================================
+     Landing-page background: random pick between the two converted photos,
+     once per page load. Sets a CSS custom property rather than swapping a
+     class so the gradient/size/position treatment in
+     #screen-landing.is-active (easy-break.css) stays the single source of
+     truth for both photos.
+     Paths here are root-absolute ('/assets/...'), not relative, on purpose:
+     a relative url() set on a custom property via inline JS style has
+     genuinely inconsistent resolution across browsers (some resolve it
+     relative to the page that set it, some relative to the stylesheet the
+     var() is later consumed in - this isn't settled/uniform behavior).
+     Chasing the "right" relative path caused a real bug (background never
+     rendered - the stylesheet-relative interpretation turned this into a
+     404 against /assets/assets/...). An absolute path sidesteps the
+     ambiguity entirely, since it resolves the same regardless of base. */
+  (function pickRandomLandingPhoto() {
+    const photos = ['/assets/landing-bg-clouds.jpg', '/assets/landing-bg-dusk.jpg'];
+    const chosen = photos[Math.floor(Math.random() * photos.length)];
+    document.documentElement.style.setProperty('--landing-photo', "url('" + chosen + "')");
+  })();
+
   /* =====================================================================
      Copy / i18n
      ===================================================================== */
