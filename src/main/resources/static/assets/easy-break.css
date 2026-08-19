@@ -106,6 +106,13 @@ body {
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
+/* Toggled on <body> by setScreen() (index.html) whenever the landing screen
+   is active - it's a single fixed hero, not a scrolling page, so there's
+   nothing to scroll to. Set on both html and body: overflow:hidden on just
+   body doesn't reliably stop the *page* from scrolling in every browser,
+   since html is the actual scrolling box. */
+html.eb-no-scroll, body.eb-no-scroll { overflow: hidden; }
+
 /* Loosened from the original's tight -0.01em: editorial headings build
    hierarchy through generous spacing and scale, not dense tracking. Serif
    headings against the sans body text is the other half of that editorial

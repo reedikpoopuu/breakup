@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="eb-no-scroll">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300..600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/easy-break.css">
 </head>
-<body>
+<body class="eb-no-scroll">
 
 <div class="eb-shell">
 
@@ -587,6 +587,8 @@
     state.screen = screen;
     document.querySelectorAll('.eb-screen').forEach(el => el.classList.remove('is-active'));
     document.getElementById('screen-' + screen).classList.add('is-active');
+    document.documentElement.classList.toggle('eb-no-scroll', screen === 'landing');
+    document.body.classList.toggle('eb-no-scroll', screen === 'landing');
     document.getElementById('topbar-landing').classList.toggle('eb-hidden', screen !== 'landing');
     document.getElementById('topbar-app').classList.toggle('eb-hidden', screen === 'landing');
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
