@@ -253,8 +253,13 @@ a:hover { color: var(--accent-text-strong); }
      is 'landing-bg.jpg' (sibling to this file), not 'assets/landing-bg.jpg'
      (which resolved to the non-existent /assets/assets/landing-bg.jpg and
      silently failed - the bug behind the photo not appearing at all). */
+  /* Lightened from 72%/86% - the photo itself (a dusk sky with a bright
+     horizon glow) is more of the point now, the scrim's only job is keeping
+     the centered hero text legible over that bright band, not blanketing
+     the whole image. Still slightly darker toward the bottom, where the
+     CTA button sits. */
   background-image:
-    linear-gradient(oklch(9% 0.002 80 / 72%), oklch(9% 0.002 80 / 86%)),
+    linear-gradient(oklch(9% 0.002 80 / 32%), oklch(9% 0.002 80 / 48%)),
     url('landing-bg.jpg');
   background-size: cover;
   background-position: center;
@@ -311,8 +316,11 @@ a:hover { color: var(--accent-text-strong); }
 .eb-badge-danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
 
 /* ---------- upload zone ---------- */
+/* Bold dropped per this iteration - still the same danger-colored banner
+   (background/border/text color untouched), just regular weight now, so the
+   AI-processing disclosure stays just as visually present, only lighter. */
 .eb-upload-warning {
-  font-weight: 700; font-size: 12.5px; line-height: 1.5; color: var(--danger-text);
+  font-weight: 400; font-size: 12.5px; line-height: 1.5; color: var(--danger-text);
   background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-card);
   padding: 10px 14px; margin-bottom: 14px;
 }
