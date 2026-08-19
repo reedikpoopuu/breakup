@@ -23,10 +23,13 @@ import java.time.YearMonth;
  *   <li><b>LT</b>: 1st of next month if signed by 3 working days before the end of
  *   the current month; later than that and it's the 1st of the month after.</li>
  * </ul>
- * <b>Known v1 limitation</b>: "working days" for LT counts Monday-Friday only - no
- * Baltic public-holiday calendar is applied. A real holiday calendar differs per
- * country and changes every year, which is a separate, larger piece of work; this is a
- * deliberate simplification, not an oversight.
+ * "Working days" for LT excludes both weekends and Lithuanian public holidays (see
+ * {@link LithuanianPublicHolidays}) - added after finding a concrete, recurring case
+ * this missed: in years where 31 December falls on a Monday, Tuesday, or Wednesday
+ * (roughly 3 years in 7), the naive weekends-only count landed exactly on 26 December,
+ * a real Lithuanian public holiday, silently telling a customer they'd made the
+ * January-switch cutoff when the true legal answer was February. EE's and LV's rules
+ * don't reference working days at all, so neither needed this.
  */
 @Component
 public class SwitchingWindowCalculator {
@@ -61,6 +64,7 @@ public class SwitchingWindowCalculator {
 
     private static boolean isWorkingDay(LocalDate date) {
         DayOfWeek day = date.getDayOfWeek();
-        return day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY;
+        return day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY
+                && !LithuanianPublicHolidays.isPublicHoliday(date);
     }
 }

@@ -85,6 +85,33 @@ class SwitchingWindowCalculatorTest {
         assertThat(result).isEqualTo(LocalDate.of(2026, 10, 1));
     }
 
+    // ---- LT holiday-awareness regression: 31 December 2029 falls on a Monday, so the
+    // naive weekends-only count would land the cutoff on 26 December - a real Lithuanian
+    // public holiday (2nd Day of Christmas). Verified independently before writing this:
+    // with holidays excluded, the true 3rd working day back is Friday 21 December, since
+    // 24-26 December are all holidays and 22-23 December are the weekend. ----
+
+    @Test
+    void ltCutoffSkipsBackPastTheChristmasHolidayClusterNotJustTheWeekend() {
+        LocalDate result = calculator.earliestSwitchDate(CountryCode.LT, LocalDate.of(2029, 12, 21));
+        assertThat(result).isEqualTo(LocalDate.of(2030, 1, 1));
+    }
+
+    @Test
+    void ltOneDayPastTheHolidayAwareCutoffIsPushedAnotherMonth() {
+        LocalDate result = calculator.earliestSwitchDate(CountryCode.LT, LocalDate.of(2029, 12, 22));
+        assertThat(result).isEqualTo(LocalDate.of(2030, 2, 1));
+    }
+
+    @Test
+    void ltSigningDuringTheHolidayClusterItselfIsAlreadyTooLate() {
+        // Without holiday-awareness, this used to be wrongly counted as "still on time"
+        // (26 December was miscounted as the 3rd working day) - this is the exact bug
+        // this fix closes, not just a boundary re-check.
+        LocalDate result = calculator.earliestSwitchDate(CountryCode.LT, LocalDate.of(2029, 12, 26));
+        assertThat(result).isEqualTo(LocalDate.of(2030, 2, 1));
+    }
+
     // ---- Month-length edge case: computing "next month" must not be thrown off by
     // reference dates near the end of a long month rolling into a short one ----
 

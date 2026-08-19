@@ -69,7 +69,12 @@ public class ContractPricingAiExtractor {
               "monthlyFeeEur": number or null - a flat monthly fee charged in addition to the \
             per-kWh price/margin, independent of contract type; null if no such fee is stated. \
             Also excluding VAT, same rule as pricePerKwh,
-              "contractType": "FIXED", "SPOT", or null,
+              "contractType": "FIXED", "SPOT", or null. Note some plans marketed as a \
+            "fixed price" are actually SPOT here: if the price is described as a periodically \
+            published average/reference market rate plus a margin (e.g. re-set monthly based \
+            on that period's average market price), classify as SPOT even if the marketing \
+            copy uses the word "fixed" - what matters is whether the number is a standalone \
+            flat rate or a margin over a market-derived reference,
               "termless": true only if the contract explicitly has no fixed end date and \
             continues until cancelled (e.g. Estonian "tähtajatu") AND contractType is "SPOT" - \
             otherwise false. Never true for a FIXED contract, even if it also reads as \
@@ -127,7 +132,11 @@ public class ContractPricingAiExtractor {
         String contractType = raw.contractType() != null && ALLOWED_CONTRACT_TYPES.contains(raw.contractType())
                 ? raw.contractType() : null;
         // termless is only ever trusted for SPOT - v1 has no "no end date" concept for FIXED,
-        // whatever the model claims (see AiExtractedPricingFields' javadoc). And whenever it IS
+        // whatever the model claims (see AiExtractedPricingFields' javadoc). A plan marketed as
+        // "fixed" that's actually a margin over a periodically-republished reference price (e.g.
+        // Alexela's "Pingevaba" - monthly-average spot base + margin + fee, contractually
+        // tähtajatu) should already have been classified SPOT by the prompt above, precisely so
+        // it lands here rather than needing a FIXED-can-be-termless carve-out. And whenever it IS
         // termless, expiryDate is forced null too: the two are mutually exclusive, and the model
         // isn't trusted to have enforced that itself.
         boolean termless = Boolean.TRUE.equals(raw.termless()) && "SPOT".equals(contractType);
