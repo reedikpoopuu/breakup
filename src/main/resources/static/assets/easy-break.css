@@ -259,14 +259,14 @@ a:hover { color: var(--accent-text-strong); }
    source of truth for the gradient/size/position treatment regardless of
    which photo is showing. The url() below is a static fallback for the
    (theoretical) case JS never runs.
-   Two different url() resolution rules collide here, easy to get backwards
-   (did once already - see the old fix commit): a url() written IN THIS
-   STYLESHEET resolves relative to the stylesheet's own location
-   (/assets/easy-break.css), so 'landing-bg-clouds.jpg' below means
-   /assets/landing-bg-clouds.jpg. A url() the JS sets on --landing-photo via
-   inline style resolves relative to the PAGE instead (index.html, served
-   from site root), so that code uses "assets/landing-bg-dusk.jpg" - the
-   'assets/' prefix is required there and wrong here. */
+   Both this fallback and the JS-set value use a root-absolute path
+   ('/assets/...'), not a relative one - relative url()s set on a custom
+   property via inline JS style resolve inconsistently across browsers
+   (defining-page-relative vs. consuming-stylesheet-relative), which is what
+   actually broke this the first time (silently 404'd, dropping the whole
+   background-image declaration). Absolute paths resolve the same regardless
+   of which rule a given browser applies, so this can't drift out of sync
+   again. */
 #screen-landing.is-active {
   display: flex;
   align-items: center;
@@ -274,7 +274,7 @@ a:hover { color: var(--accent-text-strong); }
   min-height: 100vh;
   background-image:
     linear-gradient(oklch(9% 0.002 80 / 32%), oklch(9% 0.002 80 / 48%)),
-    var(--landing-photo, url('landing-bg-clouds.jpg'));
+    var(--landing-photo, url('/assets/landing-bg-clouds.jpg'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
