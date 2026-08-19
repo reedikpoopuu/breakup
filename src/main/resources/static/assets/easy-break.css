@@ -248,9 +248,14 @@ a:hover { color: var(--accent-text-strong); }
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  /* url() in a stylesheet resolves relative to the stylesheet's own location
+     (this file is itself at /assets/easy-break.css), not the page's - so this
+     is 'landing-bg.jpg' (sibling to this file), not 'assets/landing-bg.jpg'
+     (which resolved to the non-existent /assets/assets/landing-bg.jpg and
+     silently failed - the bug behind the photo not appearing at all). */
   background-image:
     linear-gradient(oklch(9% 0.002 80 / 72%), oklch(9% 0.002 80 / 86%)),
-    url('assets/landing-bg.jpg');
+    url('landing-bg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
