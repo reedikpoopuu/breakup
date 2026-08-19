@@ -19,12 +19,16 @@ import java.math.BigDecimal;
  * {@code termless} is only ever trusted when {@code contractType} is {@code SPOT} -
  * {@link ContractPricingAiExtractor#sanitize} discards it otherwise, and forces {@code
  * expiryDate} to null whenever it's true, since v1 only supports "no end date" for spot
- * contracts. {@code earlyTerminationPenaltyEur} is the mirror image: only ever trusted
- * when {@code contractType} is {@code FIXED} and forced null for {@code SPOT} (or
- * unknown) - the penalty compensates the supplier for breaking a hedge bought to
- * guarantee the fixed price, which a spot contract has no equivalent of. All monetary
- * fields ({@code pricePerKwh}, {@code monthlyFeeEur}, {@code
- * earlyTerminationPenaltyEur}) are excluding VAT, per the system prompt.
+ * contracts. A plan marketed as "fixed" whose price is actually a margin over a
+ * periodically-republished reference rate (verified real example: Alexela's
+ * "Pingevaba" - monthly-average spot base + margin + fee, contractually {@code
+ * tähtajatu}) is expected to already be classified {@code SPOT} by the system prompt,
+ * not carved out as a FIXED exception here. {@code earlyTerminationPenaltyEur} is the
+ * mirror image: only ever trusted when {@code contractType} is {@code FIXED} and
+ * forced null for {@code SPOT} (or unknown) - the penalty compensates the supplier for
+ * breaking a hedge bought to guarantee the fixed price, which a spot contract has no
+ * equivalent of. All monetary fields ({@code pricePerKwh}, {@code monthlyFeeEur},
+ * {@code earlyTerminationPenaltyEur}) are excluding VAT, per the system prompt.
  */
 public record AiExtractedPricingFields(
         String supplierName,
