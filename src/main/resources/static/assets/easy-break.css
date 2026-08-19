@@ -165,7 +165,10 @@ a:hover { color: var(--accent-text-strong); }
 .eb-brand { display: flex; align-items: center; gap: 9px; cursor: pointer; }
 /* Header logo removed too, same as the hero one from the last iteration. */
 .eb-brand svg { display: none; }
-.eb-brand-word { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+/* Serif italic, lowercase - reads as a cursive-leaning wordmark using the
+   same Fraunces family as the rest of the editorial type system, rather
+   than pulling in a separate script font just for this one word. */
+.eb-brand-word { font-family: var(--font-serif); font-style: italic; font-weight: 500; font-size: 19px; text-transform: lowercase; color: var(--gray-900); }
 
 /* ---------- stepper (3-step customer journey) ---------- */
 .eb-stepper { display: flex; align-items: center; gap: 6px; }
@@ -289,12 +292,12 @@ a:hover { color: var(--accent-text-strong); }
 
 /* ---------- landing hero ---------- */
 .eb-hero { max-width: 640px; margin: 0 auto; padding: 48px 24px; text-align: center; }
-/* Logo removed per this iteration - see git history for the oversized/bled
-   treatment this replaces if it's ever wanted back. Wordmark text stays for
-   brand identity, just without the graphic mark next to it. */
-.eb-hero-logo svg { display: none; }
-.eb-hero-logo { display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
-.eb-hero-logo span { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-500); }
+/* Logo AND wordmark both removed from the hero now - the grey label text
+   (var(--gray-500), the same muted tone it's always been) has no contrast
+   against a photo background and just reads as illegible. Brand identity
+   still lives in the topbar (.eb-brand-word), which sits on a solid dark
+   bar, not on the photo. */
+.eb-hero-logo { display: none; }
 /* The big display move: light weight + wide tracking instead of heavy/tight -
    scale alone (44px) carries the hierarchy, matching the reference's
    "visual hierarchy through scale rather than weight variation." */
